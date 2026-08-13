@@ -1,8 +1,8 @@
-const CACHE_NAME = "petrol-calc-v8";
-const CSV_CACHE = "petrol-calc-csv-v8";
-const CSV_URL =
-  "https://www.consumer.org.hk/pricewatch/oilwatch/opendata/oilprice_en.csv";
-const CSV_TTL_MS = 6 * 60 * 60 * 1000;
+const CACHE_NAME = "petrol-calc-v9";
+const PRICE_CACHE = "petrol-calc-price-v9";
+const PRICE_URL =
+  "https://www.consumer.org.hk/pricewatch/oilwatch/opendata/oilprice.json";
+const PRICE_TTL_MS = 6 * 60 * 60 * 1000;
 
 const STATIC_ASSETS = [
   "./",
@@ -23,7 +23,7 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  const keep = new Set([CACHE_NAME, CSV_CACHE]);
+  const keep = new Set([CACHE_NAME, PRICE_CACHE]);
   event.waitUntil(
     caches
       .keys()
@@ -34,13 +34,13 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-function isCsvRequest(request) {
+function isPriceRequest(request) {
   try {
     const url = new URL(request.url);
     return (
-      request.url === CSV_URL ||
-      url.href === CSV_URL ||
-      url.pathname.endsWith("oilprice_en.csv") ||
+      request.url === PRICE_URL ||
+      url.href === PRICE_URL ||
+      url.pathname.endsWith("oilprice.json") ||
       url.pathname.includes("/oilwatch/opendata/")
     );
   } catch {
@@ -71,11 +71,11 @@ function cacheAgeMs(response) {
   return Date.now() - stamped;
 }
 
-async function putCsvCache(request, response) {
-  const cache = await caches.open(CSV_CACHE);
+async function putPriceCache(request, response) {
+  const cache = await caches.open(PRICE_CACHE);
   const headers = new Headers(response.headers);
   headers.set("x-sw-cached-at", String(Date.now()));
-  headers.set("x-sw-cache-ttl", String(CSV_TTL_MS));
+  headers.set("x-sw-cache-ttl", String(PRICE_TTL_MS));
   const body = await response.clone().blob();
   await cache.put(
     request,
@@ -88,26 +88,25 @@ async function putCsvCache(request, response) {
 }
 
 /**
- * Network-first for CSV — always try live Consumer Council data first.
- * On network failure, fall back to cached CSV (prefer < 6h, else stale).
+ * Network-first for oil price JSON — always try live Consumer Council data first.
+ * On network failure, fall back to cached JSON (prefer < 6h, else stale).
  */
-async function networkFirstCsv(request) {
-  const cache = await caches.open(CSV_CACHE);
+async function networkFirstPrice(request) {
+  const cache = await caches.open(PRICE_CACHE);
   try {
     const response = await fetch(request, { cache: "no-store", mode: "cors" });
     if (response && response.ok) {
-      await putCsvCache(request, response);
+      await putPriceCache(request, response);
       return response;
     }
     throw new Error("Bad network response");
   } catch (err) {
-    const cached = (await cache.match(request)) || (await cache.match(CSV_URL));
+    const cached = (await cache.match(request)) || (await cache.match(PRICE_URL));
     if (!cached) throw err;
 
     const age = cacheAgeMs(cached);
-    if (age <= CSV_TTL_MS) return cached;
+    if (age <= PRICE_TTL_MS) return cached;
 
-    // Stale-but-present fallback for fully offline clients.
     const headers = new Headers(cached.headers);
     headers.set("x-sw-cache-stale", "1");
     return new Response(await cached.clone().blob(), {
@@ -121,8 +120,8 @@ async function networkFirstCsv(request) {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
-  if (isCsvRequest(event.request)) {
-    event.respondWith(networkFirstCsv(event.request));
+  if (isPriceRequest(event.request)) {
+    event.respondWith(networkFirstPrice(event.request));
     return;
   }
 

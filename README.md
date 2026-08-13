@@ -7,14 +7,14 @@ Offline-ready PWA to calculate Hong Kong petrol coupon savings.
 - Live board prices for Caltex, Shell, Esso, Sinopec, and PetroChina
 - Standard / Premium / Diesel toggle
 - Energy card discount + coupon count (1–5) calculator
-- Fetches the latest Consumer Council CSV on every app open
+- Fetches the latest Consumer Council oil price JSON on every app open
 - Offline fallback via service worker + saved cache when live fetch fails
 - Installable Progressive Web App
 
 ## Data source
 
 Pump price data from the
-[Consumer Council Hong Kong Oil Watch open data CSV](https://www.consumer.org.hk/pricewatch/oilwatch/opendata/oilprice_en.csv).
+[Consumer Council Hong Kong Oil Watch open data JSON](https://www.consumer.org.hk/pricewatch/oilwatch/opendata/oilprice.json).
 
 ## Local preview
 
@@ -51,5 +51,5 @@ All asset paths in this project are relative (`./` + `<base href="./">`) so the 
 
 - `manifest.json` with `name`, `short_name`, `start_url`, `display: standalone`, theme/background colors
 - 192×192 and 512×512 icons (any + maskable)
-- Service worker precaches the app shell and caches CSV runtime data
+- Service worker precaches the app shell and caches oil-price JSON runtime data
 - `theme-color`, viewport meta, and Apple touch icon for installability
