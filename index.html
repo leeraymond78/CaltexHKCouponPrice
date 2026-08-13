@@ -2,27 +2,1129 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#ffffff" />
-    <meta name="description" content="Caltex HK Coupon Price" />
-    <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="icons/icon-192.png" />
-    <title>Caltex HK Coupon Price</title>
+    <base href="./" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0D0D0D" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta
+      name="description"
+      content="Offline-ready PWA to calculate Hong Kong petrol coupon savings"
+    />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="icons/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <title>Petrol Coupon Calc</title>
     <style>
+      :root {
+        --bg: #0d0d0d;
+        --card: #1a1a1a;
+        --border: rgba(255, 255, 255, 0.08);
+        --teal: #00c9b1;
+        --coral: #ff6b4a;
+        --coral-2: #ff8f3d;
+        --green: #4ade80;
+        --text: #ffffff;
+        --muted: #888888;
+        --font: -apple-system, "SF Pro", "SF Pro Text", "Helvetica Neue",
+          sans-serif;
+        --touch: 44px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
       html,
       body {
         margin: 0;
         min-height: 100%;
-        background: #fff;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body {
+        padding: 1.5rem 1.15rem calc(2rem + env(safe-area-inset-bottom));
+      }
+
+      .app {
+        width: min(390px, 100%);
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1.05rem;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      .update-banner {
+        display: none;
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        padding: 0.75rem 1rem;
+        min-height: var(--touch);
+        border-radius: 12px;
+        border: 1px solid color-mix(in srgb, var(--teal) 40%, var(--border));
+        background: color-mix(in srgb, var(--card) 90%, #003830);
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 600;
+        text-align: center;
+        cursor: pointer;
+      }
+
+      .update-banner.is-visible {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .header {
+        text-align: center;
+        position: relative;
+        padding-top: 0.15rem;
+      }
+
+      .header h1 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1.25;
+      }
+
+      .header .updated {
+        margin: 0.4rem 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .header .updated[data-state="loading"] {
+        color: var(--teal);
+      }
+
+      .header .updated[data-state="error"] {
+        color: var(--coral);
+      }
+
+      .offline-pill {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 0;
+        align-items: center;
+        min-height: 28px;
+        padding: 0.25rem 0.65rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: color-mix(in srgb, var(--card) 80%, #3a2a00);
+        color: #f0c674;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .offline-pill.is-visible {
+        display: inline-flex;
+      }
+
+      .warning {
+        display: none;
+        gap: 0.45rem;
+        align-items: flex-start;
+        padding: 0.85rem 0.95rem;
+        border-radius: 16px;
+        border: 1px solid color-mix(in srgb, var(--coral) 40%, var(--border));
+        background: color-mix(in srgb, var(--card) 85%, #3a120c);
+        color: #ffc2b4;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      .warning.is-visible {
+        display: flex;
+      }
+
+      .fuel-toggle {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.3rem;
+        padding: 0.3rem;
+        border-radius: 999px;
+        background: #141414;
+        border: 1px solid var(--border);
+      }
+
+      .fuel-toggle button {
+        appearance: none;
+        border: 0;
+        min-height: var(--touch);
+        background: transparent;
+        color: rgba(255, 255, 255, 0.72);
+        border-radius: 999px;
+        padding: 0.7rem 0.5rem;
+        font: inherit;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          box-shadow 0.18s ease,
+          transform 0.18s ease;
+      }
+
+      .fuel-toggle button[aria-pressed="true"] {
+        background: linear-gradient(135deg, #ff6b4a 0%, #ff8f3d 100%);
+        color: var(--text);
+        box-shadow: 0 8px 20px rgba(255, 107, 74, 0.28);
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1.05rem 1.1rem;
+      }
+
+      .price-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        min-height: var(--touch);
+      }
+
+      .price-row + .price-row {
+        margin-top: 0.35rem;
+        padding-top: 0.35rem;
+        border-top: 1px solid var(--border);
+      }
+
+      .price-row .label {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .flip {
+        display: inline-block;
+        transition:
+          transform 0.22s ease,
+          opacity 0.22s ease;
+      }
+
+      .flip.is-updating {
+        animation: numberFlip 0.28s ease;
+      }
+
+      @keyframes numberFlip {
+        0% {
+          opacity: 0.35;
+          transform: translateY(6px) scale(0.98);
+        }
+        55% {
+          opacity: 1;
+          transform: translateY(-2px) scale(1.02);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .board-value {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        white-space: nowrap;
+      }
+
+      .board-edit {
+        display: none;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .board-edit.is-visible {
+        display: inline-flex;
+      }
+
+      .board-edit input,
+      .energy-edit input {
+        border: 0;
+        border-bottom: 1.5px solid var(--teal);
+        border-radius: 0;
+        background: transparent;
+        color: var(--teal);
+        font: inherit;
+        font-size: 16px;
+        font-weight: 700;
+        text-align: right;
+        padding: 0.35rem 0.1rem;
+        min-height: var(--touch);
+        outline: none;
+      }
+
+      .board-edit input {
+        width: 4.8rem;
+      }
+
+      .board-edit .suffix {
+        color: var(--text);
+        font-weight: 700;
+      }
+
+      #boardPriceDisplay.is-hidden {
+        display: none;
+      }
+
+      .energy-edit {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        color: var(--teal);
+        min-height: var(--touch);
+      }
+
+      .energy-edit .prefix {
+        font-weight: 700;
+        font-size: 16px;
+      }
+
+      .energy-edit input {
+        width: 3.6rem;
+      }
+
+      .energy-edit input.is-invalid {
+        border-bottom-color: var(--coral);
+        color: var(--coral);
+      }
+
+      .energy-edit .pencil {
+        width: 14px;
+        height: 14px;
+        opacity: 0.9;
+        flex-shrink: 0;
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      .energy-hint {
+        margin: 0;
+        min-height: 1rem;
+        color: var(--coral);
+        font-size: 11px;
+        text-align: right;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      .energy-hint.is-visible {
+        opacity: 1;
+      }
+
+      .coupon-label {
+        margin: 0 0 0.7rem;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+
+      .coupon-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.55rem;
+      }
+
+      .coupon-grid button {
+        appearance: none;
+        min-width: var(--touch);
+        min-height: var(--touch);
+        aspect-ratio: 1;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: #121212;
+        color: rgba(255, 255, 255, 0.75);
+        font: inherit;
+        font-size: 17px;
+        font-weight: 700;
+        cursor: pointer;
+        transition:
+          transform 0.15s ease,
+          background 0.15s ease,
+          color 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+
+      .coupon-grid button[aria-pressed="true"] {
+        background: linear-gradient(145deg, #00d4c0 0%, #00b7ff 100%);
+        color: var(--text);
+        border-color: transparent;
+        transform: scale(1.05);
+        box-shadow: 0 0 0 3px rgba(0, 201, 177, 0.18),
+          0 8px 20px rgba(0, 201, 177, 0.3);
+      }
+
+      .coupon-summary {
+        margin: 0.85rem 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.4;
+        text-align: center;
+      }
+
+      .result-card {
+        border: 1.5px solid color-mix(in srgb, var(--teal) 55%, transparent);
+        box-shadow:
+          0 0 0 1px rgba(0, 201, 177, 0.08),
+          0 0 28px rgba(0, 201, 177, 0.22);
+        transition: box-shadow 0.25s ease, transform 0.25s ease;
+      }
+
+      .result-card.is-pulsing {
+        animation: resultPulse 0.42s ease;
+      }
+
+      @keyframes resultPulse {
+        0% {
+          transform: scale(1);
+        }
+        40% {
+          transform: scale(1.015);
+          box-shadow:
+            0 0 0 1px rgba(0, 201, 177, 0.25),
+            0 0 36px rgba(0, 201, 177, 0.4);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .net-label {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .net-value {
+        margin: 0.2rem 0 0;
+        font-size: 42px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+      }
+
+      .result-divider {
+        height: 1px;
+        margin: 0.95rem 0;
+        background: var(--border);
+        border: 0;
+      }
+
+      .stat-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        min-height: 1.7rem;
+      }
+
+      .stat-row + .stat-row {
+        margin-top: 0.55rem;
+      }
+
+      .stat-row .k {
+        color: rgba(255, 255, 255, 0.92);
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .stat-row .v {
+        font-size: 14px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .stat-row .v.teal {
+        color: var(--teal);
+      }
+
+      .stat-row .v.green {
+        color: var(--green);
+      }
+
+      button:focus-visible,
+      input:focus-visible {
+        outline: 2px solid color-mix(in srgb, var(--teal) 65%, transparent);
+        outline-offset: 2px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .flip.is-updating,
+        .result-card.is-pulsing {
+          animation: none;
+        }
       }
     </style>
   </head>
   <body>
+    <div class="app">
+      <button type="button" class="update-banner" id="updateBanner" hidden>
+        Update available — tap to refresh
+      </button>
+
+      <header class="header">
+        <span class="offline-pill" id="offlinePill" aria-live="polite"
+          >Offline</span
+        >
+        <h1>Petrol Coupon Calc ⛽</h1>
+        <p class="updated" id="updated" data-state="loading">
+          Getting latest prices online…
+        </p>
+      </header>
+
+      <div class="warning" id="priceWarning" role="status" aria-live="polite">
+        ⚠️ Could not load live prices. Enter board price manually.
+      </div>
+
+      <div
+        class="fuel-toggle"
+        id="fuelToggle"
+        role="group"
+        aria-label="Fuel type"
+      >
+        <button type="button" data-fuel="Standard Petrol" aria-pressed="true">
+          Regular
+        </button>
+        <button type="button" data-fuel="Premium Petrol" aria-pressed="false">
+          Premium
+        </button>
+      </div>
+
+      <section class="card price-card" aria-label="Price details">
+        <div class="price-row">
+          <span class="label">Board Price</span>
+          <span class="board-value flip" id="boardPriceDisplay">— / L</span>
+          <label class="board-edit" id="boardEdit" for="boardPriceInput">
+            <input
+              id="boardPriceInput"
+              type="number"
+              min="0"
+              step="0.01"
+              inputmode="decimal"
+              placeholder="0.00"
+              aria-label="Board price per litre"
+            />
+            <span class="suffix">/ L</span>
+          </label>
+        </div>
+        <div class="price-row">
+          <span class="label">Energy Card Discount</span>
+          <label class="energy-edit" for="energyDiscount">
+            <span class="prefix">-$</span>
+            <input
+              id="energyDiscount"
+              type="number"
+              min="0"
+              max="30"
+              step="0.1"
+              inputmode="decimal"
+              value="11"
+              aria-label="Energy card discount"
+              aria-describedby="energyHint"
+            />
+            <svg
+              class="pencil"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M4 20h4.5L19 9.5 14.5 5 4 15.5V20z"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M12.8 6.7 17.3 11.2"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+          </label>
+        </div>
+        <p class="energy-hint" id="energyHint">Enter a value between 0 and 30</p>
+      </section>
+
+      <section class="card coupon-card" aria-label="Coupons">
+        <p class="coupon-label">Coupons</p>
+        <div
+          class="coupon-grid"
+          id="couponGrid"
+          role="group"
+          aria-label="Coupon count"
+        >
+          <button type="button" data-count="1" aria-pressed="false">1</button>
+          <button type="button" data-count="2" aria-pressed="true">2</button>
+          <button type="button" data-count="3" aria-pressed="false">3</button>
+          <button type="button" data-count="4" aria-pressed="false">4</button>
+          <button type="button" data-count="5" aria-pressed="false">5</button>
+        </div>
+        <p class="coupon-summary flip" id="couponSummary">
+          2 × $300 = $600 total &nbsp;•&nbsp; $100 rebate
+        </p>
+      </section>
+
+      <section
+        class="card result-card"
+        id="resultCard"
+        aria-label="Calculation result"
+      >
+        <p class="net-label">Net Payment</p>
+        <p class="net-value flip" id="netPayment">$—</p>
+        <hr class="result-divider" />
+        <div class="stat-row">
+          <span class="k">Real Price</span>
+          <span class="v teal flip" id="realPrice">$— / L</span>
+        </div>
+        <div class="stat-row">
+          <span class="k">Litres</span>
+          <span class="v flip" id="litres">— L</span>
+        </div>
+        <div class="stat-row">
+          <span class="k">You Save</span>
+          <span class="v green flip" id="youSave">$—</span>
+        </div>
+      </section>
+    </div>
+
     <script>
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("./sw.js");
+      const CSV_URL =
+        "https://www.consumer.org.hk/pricewatch/oilwatch/opendata/oilprice_en.csv";
+      const CACHE_KEY = "price_cache";
+      const CACHE_TIME_KEY = "price_cache_time";
+      const ENERGY_KEYS = {
+        "Standard Petrol": "energy_discount_regular",
+        "Premium Petrol": "energy_discount_premium",
+      };
+      const DEFAULT_ENERGY = {
+        "Standard Petrol": 11,
+        "Premium Petrol": 12,
+      };
+      const COMPANY = "Caltex";
+      const FUEL_TYPES = ["Standard Petrol", "Premium Petrol"];
+      const COUPON_VALUE = 300;
+      const REBATE_PER_COUPON = 50;
+
+      const updatedEl = document.getElementById("updated");
+      const offlinePill = document.getElementById("offlinePill");
+      const priceWarning = document.getElementById("priceWarning");
+      const updateBanner = document.getElementById("updateBanner");
+      const fuelToggle = document.getElementById("fuelToggle");
+      const energyDiscountEl = document.getElementById("energyDiscount");
+      const energyHint = document.getElementById("energyHint");
+      const couponGrid = document.getElementById("couponGrid");
+      const boardPriceDisplay = document.getElementById("boardPriceDisplay");
+      const boardEdit = document.getElementById("boardEdit");
+      const boardPriceInput = document.getElementById("boardPriceInput");
+      const couponSummary = document.getElementById("couponSummary");
+      const resultCard = document.getElementById("resultCard");
+      const netPaymentEl = document.getElementById("netPayment");
+      const realPriceEl = document.getElementById("realPrice");
+      const litresEl = document.getElementById("litres");
+      const youSaveEl = document.getElementById("youSave");
+
+      /** @type {Record<string, Record<string, number>>} */
+      let prices = {};
+      let selectedFuel = "Standard Petrol";
+      let selectedCoupons = 2;
+      let boardPrice = NaN;
+      let manualBoardMode = false;
+      let waitingWorker = null;
+      let lastResultSignature = "";
+
+      function round2(value) {
+        return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
       }
+
+      function calculate(params) {
+        const board = Number(params.boardPrice);
+        const energyDiscount = Number(params.energyDiscount);
+        const couponCount = Number(params.couponCount);
+        const couponValue = Number(params.couponValue ?? COUPON_VALUE);
+        const rebatePerCoupon = Number(
+          params.rebatePerCoupon ?? REBATE_PER_COUPON,
+        );
+
+        // Per spreadsheet (平油):
+        // litres = (300 + 50) * n / boardPrice
+        // netPayment = 300 * n - energyDiscount * (300 * n / boardPrice)
+        // realPrice = netPayment / litres
+        // actualDiscount/L = boardPrice - realPrice
+        const totalSpend = couponCount * couponValue;
+        const totalRebate = couponCount * rebatePerCoupon;
+        const fuelCredit = totalSpend + totalRebate; // 300n + 50n
+        const effectivePrice = board - energyDiscount;
+        const litresObtained = board > 0 ? fuelCredit / board : NaN;
+        const paidLitresAtBoard = board > 0 ? totalSpend / board : NaN;
+        const netPayment = Number.isFinite(paidLitresAtBoard)
+          ? totalSpend - energyDiscount * paidLitresAtBoard
+          : NaN;
+        const realPricePerLitre =
+          litresObtained > 0 ? netPayment / litresObtained : NaN;
+        const actualDiscount = board - realPricePerLitre;
+
+        return {
+          boardPrice: round2(board),
+          energyDiscount: round2(energyDiscount),
+          couponCount: round2(couponCount),
+          couponValue: round2(couponValue),
+          rebatePerCoupon: round2(rebatePerCoupon),
+          totalSpend: round2(totalSpend),
+          totalRebate: round2(totalRebate),
+          effectivePrice: round2(effectivePrice),
+          litresObtained: round2(litresObtained),
+          netPayment: round2(netPayment),
+          realPricePerLitre: round2(realPricePerLitre),
+          actualDiscount: round2(actualDiscount),
+        };
+      }
+
+      function formatTime(ts) {
+        try {
+          return new Date(ts).toLocaleString();
+        } catch {
+          return "unknown";
+        }
+      }
+
+      function money(value) {
+        if (!Number.isFinite(value)) return "—";
+        return value.toFixed(2);
+      }
+
+      function setTextWithFlip(el, next) {
+        if (el.textContent === next) return;
+        el.textContent = next;
+        el.classList.remove("is-updating");
+        void el.offsetWidth;
+        el.classList.add("is-updating");
+      }
+
+      function setUpdated(state, text) {
+        updatedEl.dataset.state = state;
+        updatedEl.textContent = text;
+      }
+
+      function setManualBoardMode(enabled) {
+        manualBoardMode = enabled;
+        priceWarning.classList.toggle("is-visible", enabled);
+        boardEdit.classList.toggle("is-visible", enabled);
+        boardPriceDisplay.classList.toggle("is-hidden", enabled);
+        if (enabled && Number.isFinite(boardPrice) && boardPrice > 0) {
+          boardPriceInput.value = String(boardPrice);
+        }
+      }
+
+      function updateOnlineUi() {
+        offlinePill.classList.toggle("is-visible", !navigator.onLine);
+      }
+
+      function defaultEnergyFor(fuel = selectedFuel) {
+        return DEFAULT_ENERGY[fuel] ?? 11;
+      }
+
+      function loadEnergyDiscountFor(fuel = selectedFuel) {
+        // Drop legacy single-key save from earlier builds.
+        localStorage.removeItem("energy_discount");
+
+        const key = ENERGY_KEYS[fuel];
+        const raw = key ? localStorage.getItem(key) : null;
+        if (raw == null || raw === "") {
+          energyDiscountEl.value = String(defaultEnergyFor(fuel));
+          validateEnergyDiscount();
+          return;
+        }
+        const value = Number(raw);
+        if (Number.isFinite(value) && value >= 0 && value <= 30) {
+          energyDiscountEl.value = String(round2(value));
+        } else {
+          energyDiscountEl.value = String(defaultEnergyFor(fuel));
+        }
+        validateEnergyDiscount();
+      }
+
+      function saveEnergyDiscount(value, fuel = selectedFuel) {
+        const key = ENERGY_KEYS[fuel];
+        if (!key || !Number.isFinite(value)) return;
+        localStorage.setItem(key, String(round2(value)));
+      }
+
+      function splitCsvLine(line) {
+        const cells = [];
+        let cur = "";
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') {
+            inQuotes = !inQuotes;
+            continue;
+          }
+          if (ch === "," && !inQuotes) {
+            cells.push(cur.trim());
+            cur = "";
+            continue;
+          }
+          cur += ch;
+        }
+        cells.push(cur.trim());
+        return cells;
+      }
+
+      function parseCsvToPrices(text) {
+        const normalized = text.replace(/^\uFEFF/, "").trim();
+        const lines = [];
+        let buf = "";
+        let inQuotes = false;
+
+        for (let i = 0; i < normalized.length; i++) {
+          const ch = normalized[i];
+          if (ch === '"') inQuotes = !inQuotes;
+          if ((ch === "\n" || ch === "\r") && !inQuotes) {
+            if (ch === "\r" && normalized[i + 1] === "\n") i++;
+            if (buf.trim()) lines.push(buf.trim());
+            buf = "";
+            continue;
+          }
+          buf += ch;
+        }
+        if (buf.trim()) lines.push(buf.trim());
+
+        const result = { [COMPANY]: {} };
+        const fuelSet = new Set(FUEL_TYPES);
+
+        for (const line of lines) {
+          if (/auto-fuel type/i.test(line)) continue;
+          const cells = splitCsvLine(line);
+          if (cells.length < 3) continue;
+
+          const fuelType = cells[0].replace(/^"|"$/g, "").trim();
+          const company = cells[1].replace(/^"|"$/g, "").trim();
+          const price = Number(String(cells[2]).replace(/[^0-9.]/g, ""));
+
+          if (company !== COMPANY || !fuelSet.has(fuelType)) continue;
+          if (!Number.isFinite(price)) continue;
+          result[COMPANY][fuelType] = price;
+        }
+
+        return result;
+      }
+
+      function readLocalCache() {
+        const raw = localStorage.getItem(CACHE_KEY);
+        const timeRaw = localStorage.getItem(CACHE_TIME_KEY);
+        if (!raw || !timeRaw) return null;
+        const time = Number(timeRaw);
+        if (!Number.isFinite(time)) return null;
+        return { text: raw, time };
+      }
+
+      function writeLocalCache(text) {
+        const now = Date.now();
+        localStorage.setItem(CACHE_KEY, text);
+        localStorage.setItem(CACHE_TIME_KEY, String(now));
+        return now;
+      }
+
+      async function fetchLiveCsv() {
+        const response = await fetch(CSV_URL, { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.text();
+      }
+
+      function syncBoardPriceFromSelection() {
+        if (manualBoardMode) {
+          const typed = Number(boardPriceInput.value);
+          boardPrice = Number.isFinite(typed) && typed > 0 ? typed : NaN;
+          return;
+        }
+        const value = prices?.[COMPANY]?.[selectedFuel];
+        boardPrice = Number.isFinite(value) ? value : NaN;
+        setTextWithFlip(
+          boardPriceDisplay,
+          Number.isFinite(boardPrice) ? `$${money(boardPrice)} / L` : "— / L",
+        );
+      }
+
+      function validateEnergyDiscount() {
+        const raw = energyDiscountEl.value;
+        if (raw === "") {
+          energyDiscountEl.classList.add("is-invalid");
+          energyHint.classList.add("is-visible");
+          return false;
+        }
+        const value = Number(raw);
+        const ok = Number.isFinite(value) && value >= 0 && value <= 30;
+        energyDiscountEl.classList.toggle("is-invalid", !ok);
+        energyHint.classList.toggle("is-visible", !ok);
+        return ok;
+      }
+
+      function clampEnergyOnBlur() {
+        let value = Number(energyDiscountEl.value);
+        if (!Number.isFinite(value)) value = defaultEnergyFor();
+        value = Math.min(30, Math.max(0, value));
+        energyDiscountEl.value = String(round2(value));
+        saveEnergyDiscount(value);
+        validateEnergyDiscount();
+        renderCalculation();
+      }
+
+      function pulseResult() {
+        resultCard.classList.remove("is-pulsing");
+        void resultCard.offsetWidth;
+        resultCard.classList.add("is-pulsing");
+      }
+
+      function renderCalculation() {
+        const energyOk = validateEnergyDiscount();
+        const energyDiscount = energyOk ? Number(energyDiscountEl.value) : NaN;
+        const totalSpend = selectedCoupons * COUPON_VALUE;
+        const totalRebate = selectedCoupons * REBATE_PER_COUPON;
+
+        setTextWithFlip(
+          couponSummary,
+          `${selectedCoupons} × $${COUPON_VALUE} = $${totalSpend} total  •  $${totalRebate} rebate`,
+        );
+
+        if (
+          !Number.isFinite(boardPrice) ||
+          boardPrice <= 0 ||
+          !Number.isFinite(energyDiscount)
+        ) {
+          setTextWithFlip(netPaymentEl, "$—");
+          setTextWithFlip(realPriceEl, "$— / L");
+          setTextWithFlip(litresEl, "— L");
+          setTextWithFlip(youSaveEl, "$—");
+          return;
+        }
+
+        const result = calculate({
+          boardPrice,
+          energyDiscount,
+          couponCount: selectedCoupons,
+          couponValue: COUPON_VALUE,
+          rebatePerCoupon: REBATE_PER_COUPON,
+        });
+
+        const signature = [
+          result.netPayment,
+          result.realPricePerLitre,
+          result.litresObtained,
+          result.actualDiscount,
+        ].join("|");
+
+        setTextWithFlip(netPaymentEl, `$${money(result.netPayment)}`);
+        setTextWithFlip(
+          realPriceEl,
+          `$${money(result.realPricePerLitre)} / L`,
+        );
+        setTextWithFlip(litresEl, `${money(result.litresObtained)} L`);
+        setTextWithFlip(
+          youSaveEl,
+          Number.isFinite(result.actualDiscount)
+            ? `-$${money(result.actualDiscount)}`
+            : "$—",
+        );
+
+        if (signature !== lastResultSignature) {
+          if (lastResultSignature) pulseResult();
+          lastResultSignature = signature;
+        }
+      }
+
+      function refreshUi() {
+        syncBoardPriceFromSelection();
+        renderCalculation();
+      }
+
+      function applyPrices(nextPrices, time, state, message) {
+        prices = nextPrices;
+        setManualBoardMode(false);
+        setUpdated(
+          state,
+          message ||
+            (time ? `Last updated: ${formatTime(time)}` : "Last updated: —"),
+        );
+        refreshUi();
+      }
+
+      async function loadPrices() {
+        const cached = readLocalCache();
+
+        if (cached) {
+          prices = parseCsvToPrices(cached.text);
+          setManualBoardMode(false);
+          setUpdated(
+            "loading",
+            "Getting latest prices online… (showing last saved for now)",
+          );
+          refreshUi();
+        } else {
+          setUpdated("loading", "Getting latest prices online…");
+        }
+
+        try {
+          const text = await fetchLiveCsv();
+          const time = writeLocalCache(text);
+          applyPrices(
+            parseCsvToPrices(text),
+            time,
+            "live",
+            `Latest online · updated ${formatTime(time)}`,
+          );
+        } catch (liveError) {
+          if (cached) {
+            applyPrices(
+              parseCsvToPrices(cached.text),
+              cached.time,
+              "cached",
+              `Couldn’t reach live data · using saved prices from ${formatTime(cached.time)}`,
+            );
+            return;
+          }
+
+          prices = {};
+          setManualBoardMode(true);
+          setUpdated(
+            "error",
+            `Couldn’t load live prices (${liveError.message || "error"})`,
+          );
+          refreshUi();
+        }
+      }
+
+      function showUpdateBanner(worker) {
+        waitingWorker = worker;
+        updateBanner.hidden = false;
+        updateBanner.classList.add("is-visible");
+      }
+
+      function registerServiceWorker() {
+        if (!("serviceWorker" in navigator)) return;
+
+        navigator.serviceWorker
+          .register("sw.js")
+          .then((registration) => {
+            registration.update().catch(() => {});
+            if (registration.waiting) showUpdateBanner(registration.waiting);
+
+            registration.addEventListener("updatefound", () => {
+              const worker = registration.installing;
+              if (!worker) return;
+              worker.addEventListener("statechange", () => {
+                if (worker.state !== "installed") return;
+                if (navigator.serviceWorker.controller) {
+                  showUpdateBanner(worker);
+                } else {
+                  worker.postMessage({ type: "SKIP_WAITING" });
+                }
+              });
+            });
+          })
+          .catch(() => {});
+
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
+      }
+
+      updateBanner.addEventListener("click", () => {
+        if (!waitingWorker) {
+          window.location.reload();
+          return;
+        }
+        waitingWorker.postMessage({ type: "SKIP_WAITING" });
+      });
+
+      fuelToggle.addEventListener("click", (event) => {
+        const btn = event.target.closest("button[data-fuel]");
+        if (!btn) return;
+        selectedFuel = btn.dataset.fuel;
+        fuelToggle.querySelectorAll("button").forEach((el) => {
+          el.setAttribute(
+            "aria-pressed",
+            String(el.dataset.fuel === selectedFuel),
+          );
+        });
+        loadEnergyDiscountFor(selectedFuel);
+        refreshUi();
+      });
+
+      couponGrid.addEventListener("click", (event) => {
+        const btn = event.target.closest("button[data-count]");
+        if (!btn) return;
+        selectedCoupons = Number(btn.dataset.count);
+        couponGrid.querySelectorAll("button").forEach((el) => {
+          el.setAttribute(
+            "aria-pressed",
+            String(Number(el.dataset.count) === selectedCoupons),
+          );
+        });
+        renderCalculation();
+      });
+
+      energyDiscountEl.addEventListener("input", () => {
+        if (validateEnergyDiscount()) {
+          saveEnergyDiscount(Number(energyDiscountEl.value));
+        }
+        renderCalculation();
+      });
+      energyDiscountEl.addEventListener("change", clampEnergyOnBlur);
+      energyDiscountEl.addEventListener("blur", clampEnergyOnBlur);
+
+      boardPriceInput.addEventListener("input", () => {
+        syncBoardPriceFromSelection();
+        renderCalculation();
+      });
+
+      window.addEventListener("online", () => {
+        updateOnlineUi();
+        loadPrices();
+      });
+      window.addEventListener("offline", updateOnlineUi);
+
+      window.calculate = calculate;
+      window.getPrices = () => prices;
+
+      updateOnlineUi();
+      loadEnergyDiscountFor(selectedFuel);
+      registerServiceWorker();
+      loadPrices();
     </script>
   </body>
 </html>

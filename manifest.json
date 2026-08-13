@@ -1,12 +1,12 @@
 {
-  "name": "Caltex HK Coupon Price",
-  "short_name": "Caltex Coupons",
-  "description": "Caltex HK Coupon Price",
+  "name": "Petrol Coupon Calc",
+  "short_name": "PetrolCalc",
+  "description": "Offline-ready Caltex PWA to calculate Hong Kong petrol coupon savings",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#0D0D0D",
+  "theme_color": "#0D0D0D",
   "icons": [
     {
       "src": "icons/icon-192.png",
