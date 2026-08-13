@@ -620,8 +620,10 @@
     </div>
 
     <script>
-      const PRICE_URL =
+      const PRICE_SOURCE_URL =
         "https://www.consumer.org.hk/pricewatch/oilwatch/opendata/oilprice.json";
+      const PRICE_URL =
+        "https://corsproxy.io/?url=" + encodeURIComponent(PRICE_SOURCE_URL);
       const CACHE_KEY = "price_cache";
       const CACHE_TIME_KEY = "price_cache_time";
       const ENERGY_KEYS = {

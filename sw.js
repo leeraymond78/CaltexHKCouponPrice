@@ -1,7 +1,9 @@
-const CACHE_NAME = "petrol-calc-v9";
-const PRICE_CACHE = "petrol-calc-price-v9";
-const PRICE_URL =
+const CACHE_NAME = "petrol-calc-v10";
+const PRICE_CACHE = "petrol-calc-price-v10";
+const PRICE_SOURCE_URL =
   "https://www.consumer.org.hk/pricewatch/oilwatch/opendata/oilprice.json";
+const PRICE_URL =
+  "https://corsproxy.io/?url=" + encodeURIComponent(PRICE_SOURCE_URL);
 const PRICE_TTL_MS = 6 * 60 * 60 * 1000;
 
 const STATIC_ASSETS = [
@@ -40,6 +42,7 @@ function isPriceRequest(request) {
     return (
       request.url === PRICE_URL ||
       url.href === PRICE_URL ||
+      url.hostname === "corsproxy.io" ||
       url.pathname.endsWith("oilprice.json") ||
       url.pathname.includes("/oilwatch/opendata/")
     );
@@ -94,25 +97,33 @@ async function putPriceCache(request, response) {
 async function networkFirstPrice(request) {
   const cache = await caches.open(PRICE_CACHE);
   try {
-    const response = await fetch(request, { cache: "no-store", mode: "cors" });
+    const response = await fetch(PRICE_URL, { cache: "no-store", mode: "cors" });
     if (response && response.ok) {
-      await putPriceCache(request, response);
+      await putPriceCache(PRICE_URL, response);
       return response;
     }
     throw new Error("Bad network response");
   } catch (err) {
-    const cached = (await cache.match(request)) || (await cache.match(PRICE_URL));
-    if (!cached) throw err;
+    const cached =
+      (await cache.match(PRICE_URL)) ||
+      (await cache.match(request)) ||
+      (await cache.match(PRICE_SOURCE_URL));
+    if (cached) {
+      const age = cacheAgeMs(cached);
+      if (age <= PRICE_TTL_MS) return cached;
 
-    const age = cacheAgeMs(cached);
-    if (age <= PRICE_TTL_MS) return cached;
+      const headers = new Headers(cached.headers);
+      headers.set("x-sw-cache-stale", "1");
+      return new Response(await cached.clone().blob(), {
+        status: cached.status,
+        statusText: cached.statusText,
+        headers,
+      });
+    }
 
-    const headers = new Headers(cached.headers);
-    headers.set("x-sw-cache-stale", "1");
-    return new Response(await cached.clone().blob(), {
-      status: cached.status,
-      statusText: cached.statusText,
-      headers,
+    return new Response(JSON.stringify({ error: String(err && err.message) }), {
+      status: 504,
+      headers: { "Content-Type": "application/json" },
     });
   }
 }

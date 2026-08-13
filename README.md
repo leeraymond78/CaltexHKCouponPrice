@@ -14,7 +14,8 @@ Offline-ready PWA to calculate Hong Kong petrol coupon savings.
 ## Data source
 
 Pump price data from the
-[Consumer Council Hong Kong Oil Watch open data JSON](https://www.consumer.org.hk/pricewatch/oilwatch/opendata/oilprice.json).
+[Consumer Council Hong Kong Oil Watch open data JSON](https://www.consumer.org.hk/pricewatch/oilwatch/opendata/oilprice.json)
+(fetched via [corsproxy.io](https://corsproxy.io) to avoid browser CORS limits on GitHub Pages).
 
 ## Local preview
 
