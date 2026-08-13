@@ -1,15 +1,13 @@
-const CACHE_NAME = "petrol-calc-v10";
-const PRICE_CACHE = "petrol-calc-price-v10";
-const PRICE_SOURCE_URL =
-  "https://www.consumer.org.hk/pricewatch/oilwatch/opendata/oilprice.json";
-const PRICE_URL =
-  "https://corsproxy.io/?url=" + encodeURIComponent(PRICE_SOURCE_URL);
+const CACHE_NAME = "petrol-calc-v12";
+const PRICE_CACHE = "petrol-calc-price-v12";
+const PRICE_URL = "./data/oilprice.json";
 const PRICE_TTL_MS = 6 * 60 * 60 * 1000;
 
 const STATIC_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
+  "./data/oilprice.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/apple-touch-icon.png",
@@ -30,7 +28,9 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((key) => !keep.has(key)).map((key) => caches.delete(key))),
+        Promise.all(
+          keys.filter((key) => !keep.has(key)).map((key) => caches.delete(key)),
+        ),
       )
       .then(() => self.clients.claim()),
   );
@@ -40,11 +40,8 @@ function isPriceRequest(request) {
   try {
     const url = new URL(request.url);
     return (
-      request.url === PRICE_URL ||
-      url.href === PRICE_URL ||
-      url.hostname === "corsproxy.io" ||
-      url.pathname.endsWith("oilprice.json") ||
-      url.pathname.includes("/oilwatch/opendata/")
+      url.origin === self.location.origin &&
+      url.pathname.endsWith("/data/oilprice.json")
     );
   } catch {
     return false;
@@ -91,23 +88,22 @@ async function putPriceCache(request, response) {
 }
 
 /**
- * Network-first for oil price JSON — always try live Consumer Council data first.
- * On network failure, fall back to cached JSON (prefer < 6h, else stale).
+ * Network-first for bundled oilprice.json (updated by GitHub Actions).
+ * Falls back to SW cache when offline.
  */
 async function networkFirstPrice(request) {
   const cache = await caches.open(PRICE_CACHE);
   try {
-    const response = await fetch(PRICE_URL, { cache: "no-store", mode: "cors" });
+    const response = await fetch(request, { cache: "no-store" });
     if (response && response.ok) {
-      await putPriceCache(PRICE_URL, response);
+      await putPriceCache(request, response);
       return response;
     }
     throw new Error("Bad network response");
   } catch (err) {
     const cached =
-      (await cache.match(PRICE_URL)) ||
       (await cache.match(request)) ||
-      (await cache.match(PRICE_SOURCE_URL));
+      (await caches.match(PRICE_URL, { ignoreSearch: true }));
     if (cached) {
       const age = cacheAgeMs(cached);
       if (age <= PRICE_TTL_MS) return cached;

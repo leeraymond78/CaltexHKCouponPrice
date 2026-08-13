@@ -4,18 +4,21 @@ Offline-ready PWA to calculate Hong Kong petrol coupon savings.
 
 ## Features
 
-- Live board prices for Caltex, Shell, Esso, Sinopec, and PetroChina
-- Standard / Premium / Diesel toggle
+- Caltex Regular / Premium board prices
 - Energy card discount + coupon count (1–5) calculator
-- Fetches the latest Consumer Council oil price JSON on every app open
-- Offline fallback via service worker + saved cache when live fetch fails
+- Loads same-origin `data/oilprice.json` (no browser CORS)
+- GitHub Actions refreshes prices daily at **05:00 HKT**
+- Offline fallback via service worker + saved cache
 - Installable Progressive Web App
 
 ## Data source
 
 Pump price data from the
-[Consumer Council Hong Kong Oil Watch open data JSON](https://www.consumer.org.hk/pricewatch/oilwatch/opendata/oilprice.json)
-(fetched via [corsproxy.io](https://corsproxy.io) to avoid browser CORS limits on GitHub Pages).
+[Consumer Council Hong Kong Oil Watch open data JSON](https://www.consumer.org.hk/pricewatch/oilwatch/opendata/oilprice.json).
+
+A scheduled workflow (`.github/workflows/update-oil-prices.yml`) downloads that feed every day at 05:00 HKT (`cron: 0 21 * * *` UTC) and commits `data/oilprice.json` when prices change. The PWA reads that file from the repo / GitHub Pages origin.
+
+Manual run: **Actions → Update oil prices → Run workflow**.
 
 ## Local preview
 
@@ -52,5 +55,5 @@ All asset paths in this project are relative (`./` + `<base href="./">`) so the 
 
 - `manifest.json` with `name`, `short_name`, `start_url`, `display: standalone`, theme/background colors
 - 192×192 and 512×512 icons (any + maskable)
-- Service worker precaches the app shell and caches oil-price JSON runtime data
+- Service worker precaches the app shell and caches `data/oilprice.json`
 - `theme-color`, viewport meta, and Apple touch icon for installability
