@@ -1,5 +1,5 @@
-const CACHE_NAME = "petrol-calc-v12";
-const PRICE_CACHE = "petrol-calc-price-v12";
+const CACHE_NAME = "petrol-calc-v13";
+const PRICE_CACHE = "petrol-calc-price-v13";
 const PRICE_URL = "./data/oilprice.json";
 const PRICE_TTL_MS = 6 * 60 * 60 * 1000;
 

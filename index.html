@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
+      content="black"
     />
     <meta
       name="description"
@@ -53,7 +53,22 @@
       }
 
       body {
-        padding: 1.5rem 1.15rem calc(2rem + env(safe-area-inset-bottom));
+        padding: calc(1.25rem + env(safe-area-inset-top, 0px)) 1.15rem
+          calc(2rem + env(safe-area-inset-bottom, 0px));
+        background: var(--bg);
+      }
+
+      /* Opaque top fill so iOS status-bar area never frosts the title */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: env(safe-area-inset-top, 0px);
+        background: var(--bg);
+        z-index: 30;
+        pointer-events: none;
       }
 
       .app {
@@ -78,8 +93,7 @@
 
       .update-banner {
         display: none;
-        position: sticky;
-        top: 0;
+        position: relative;
         z-index: 20;
         padding: 0.75rem 1rem;
         min-height: var(--touch);
@@ -103,6 +117,19 @@
         text-align: center;
         position: relative;
         padding-top: 0.15rem;
+        filter: none;
+        -webkit-filter: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        opacity: 1;
+        z-index: 1;
+      }
+
+      .header h1,
+      .header .updated {
+        filter: none;
+        -webkit-filter: none;
+        opacity: 1;
       }
 
       .header h1 {
