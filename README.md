@@ -20,6 +20,10 @@ A scheduled workflow (`.github/workflows/update-oil-prices.yml`) downloads that 
 
 Manual run: **Actions → Update oil prices → Run workflow**.
 
+When prices change, the workflow:
+- Writes a **job summary** in the Actions run (vendor/fuel diff + Caltex Regular/Premium)
+- Commits with a message listing each changed price (GitHub emails you if you watch the repo)
+
 ## Local preview
 
 Serve the folder over HTTP (service workers require a secure context / localhost):
