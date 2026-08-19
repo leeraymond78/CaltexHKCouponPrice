@@ -47,12 +47,17 @@ jobs:
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
+          if [ -s /tmp/app-price-changes.txt ]; then
+            echo "app_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "app_changed=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Write job summary
         run: cat /tmp/price-summary.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Commit and push if changed
-        if: steps.diff.outputs.changed == 'true'
+      - name: Commit and push if Caltex app prices changed
+        if: steps.diff.outputs.app_changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -61,12 +66,12 @@ jobs:
           {
             echo "$SUBJECT"
             echo ""
-            echo "Price changes:"
-            sed 's/\*\*//g' /tmp/price-changes.txt
+            echo "Caltex app price changes:"
+            cat /tmp/app-price-changes.txt
           } > /tmp/commit-msg.txt
           git commit -F /tmp/commit-msg.txt
           git push
 
-      - name: No changes
-        if: steps.diff.outputs.changed != 'true'
-        run: echo "No price changes — skipped commit."
+      - name: No Caltex app changes
+        if: steps.diff.outputs.app_changed != 'true'
+        run: echo "No Caltex Standard/Premium changes — skipped commit."

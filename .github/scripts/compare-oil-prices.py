@@ -27,7 +27,11 @@ def load_prices(path: Path) -> dict[str, dict[str, str]]:
     return out
 
 
-def format_summary(old: dict, new: dict) -> tuple[str, bool]:
+APP_FUELS = ("Standard Petrol", "Premium Petrol")
+APP_VENDOR = "Caltex"
+
+
+def format_summary(old: dict, new: dict) -> tuple[str, bool, list[str]]:
     fuels = sorted(set(old) | set(new))
     vendors = sorted({v for f in fuels for v in set(old.get(f, {})) | set(new.get(f, {}))})
 
@@ -74,7 +78,8 @@ def format_summary(old: dict, new: dict) -> tuple[str, bool]:
     lines.extend(rows)
 
     caltex = []
-    for fuel in ("Standard Petrol", "Premium Petrol"):
+    app_changes: list[str] = []
+    for fuel in APP_FUELS:
         o = old.get(fuel, {}).get("Caltex")
         n = new.get(fuel, {}).get("Caltex")
         if o is None and n is None:
@@ -83,13 +88,15 @@ def format_summary(old: dict, new: dict) -> tuple[str, bool]:
         if o == n:
             caltex.append(f"- Caltex {label}: ${n} (unchanged)")
         else:
-            caltex.append(f"- Caltex {label}: ${o or '—'} → **${n or '—'}**")
+            line = f"- Caltex {label}: ${o or '—'} → **${n or '—'}**"
+            caltex.append(line)
+            app_changes.append(line)
 
     if caltex:
         lines.extend(["", "### Caltex (app)", ""])
         lines.extend(caltex)
 
-    return "\n".join(lines), bool(changes)
+    return "\n".join(lines), bool(changes), app_changes
 
 
 def main() -> int:
@@ -104,7 +111,7 @@ def main() -> int:
 
     old = load_prices(old_path)
     new = load_prices(new_path)
-    summary, has_changes = format_summary(old, new)
+    summary, has_changes, app_changes = format_summary(old, new)
 
     summary_path.write_text(summary + "\n", encoding="utf-8")
 
@@ -118,8 +125,20 @@ def main() -> int:
     else:
         changes_file.write_text("", encoding="utf-8")
 
+    app_changes_file = Path(
+        os.environ.get("APP_CHANGES_FILE", "/tmp/app-price-changes.txt")
+    )
+    if app_changes:
+        app_changes_file.write_text(
+            "\n".join(line[2:].replace("**", "") for line in app_changes) + "\n",
+            encoding="utf-8",
+        )
+    else:
+        app_changes_file.write_text("", encoding="utf-8")
+
     print(summary)
     print(f"has_changes={'true' if has_changes else 'false'}")
+    print(f"has_app_changes={'true' if bool(app_changes) else 'false'}")
     return 0
 
 
