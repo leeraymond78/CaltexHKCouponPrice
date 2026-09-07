@@ -1,63 +1,27 @@
 # Petrol Coupon Calc
 
-Offline-ready PWA to calculate Hong Kong petrol coupon savings.
+A simple calculator for **Hong Kong Caltex petrol coupons**. It shows how much you actually pay per litre after the Energy Card discount and coupon rebate.
 
-## Features
+## Open the app
 
-- Caltex Regular / Premium board prices
-- Energy card discount + coupon count (1–5) calculator
-- Loads same-origin `data/oilprice.json` (no browser CORS)
-- GitHub Actions refreshes prices daily at **05:00 HKT**
-- Offline fallback via service worker + saved cache
-- Installable Progressive Web App
+Use it in any browser, on phone or computer:
 
-## Data source
+**https://leeraymond78.github.io/CaltexHKCouponPrice/**
 
-Pump price data from the
-[Consumer Council Hong Kong Oil Watch open data JSON](https://www.consumer.org.hk/pricewatch/oilwatch/opendata/oilprice.json).
+On a phone, you can also add it to your home screen (Share → Add to Home Screen on iOS, or Install / Add to Home screen on Android). After that it works offline with the last prices it loaded.
 
-A scheduled workflow (`.github/workflows/update-oil-prices.yml`) downloads that feed every day at 05:00 HKT (`cron: 0 21 * * *` UTC) and commits `data/oilprice.json` when prices change. The PWA reads that file from the repo / GitHub Pages origin.
+## How to use it
 
-Manual run: **Actions → Update oil prices → Run workflow**.
+1. Open the link above.
+2. Choose **Regular** or **Premium**. Board prices are loaded automatically (Hong Kong dollars per litre).
+3. Set your **Energy Card discount** (HK$ per litre).
+4. Pick how many **$300 coupons** you will use (1–5).
+5. Read **Net Payment**, **Real Price** per litre, litres filled, and how much you save.
 
-When prices change, the workflow:
-- Writes a **job summary** in the Actions run (vendor/fuel diff + Caltex Regular/Premium)
-- Commits with a message listing each changed price (GitHub emails you if you watch the repo)
+If live prices cannot load, type the board price yourself.
 
-## Local preview
+## Prices
 
-Serve the folder over HTTP (service workers require a secure context / localhost):
+Pump prices come from the [Consumer Council Hong Kong Oil Watch](https://www.consumer.org.hk/pricewatch/oilwatch/opendata/oilprice.json) open data feed, and are refreshed daily.
 
-```bash
-python3 -m http.server 8080
-```
-
-Open `http://localhost:8080`.
-
-## Deploy to GitHub Pages
-
-1. Push this repository to GitHub.
-2. In the repo **Settings → Pages**:
-   - Source: **Deploy from a branch**
-   - Branch: `main`
-   - Folder: `/ (root)`
-3. Save, then wait for the Pages build to finish.
-4. Visit `https://<user>.github.io/<repo>/`.
-
-Or with GitHub CLI:
-
-```bash
-gh api -X POST "repos/<owner>/<repo>/pages" \
-  -f build_type=legacy \
-  -f source[branch]=main \
-  -f source[path]=/
-```
-
-All asset paths in this project are relative (`./` + `<base href="./">`) so the app works from a project Pages URL.
-
-## Lighthouse PWA checklist
-
-- `manifest.json` with `name`, `short_name`, `start_url`, `display: standalone`, theme/background colors
-- 192×192 and 512×512 icons (any + maskable)
-- Service worker precaches the app shell and caches `data/oilprice.json`
-- `theme-color`, viewport meta, and Apple touch icon for installability
+All amounts are in **Hong Kong dollars (HK$)**.
