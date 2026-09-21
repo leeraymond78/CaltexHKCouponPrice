@@ -6,7 +6,9 @@ from __future__ import annotations
 import json
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 
 def load_prices(path: Path) -> dict[str, dict[str, str]]:
@@ -29,6 +31,69 @@ def load_prices(path: Path) -> dict[str, dict[str, str]]:
 
 APP_FUELS = ("Standard Petrol", "Premium Petrol")
 APP_VENDOR = "Caltex"
+MAX_HISTORY_POINTS = 30
+
+
+def _price_number(value: str | None) -> float | None:
+    if value is None or value == "":
+        return None
+    try:
+        return round(float(value), 2)
+    except ValueError:
+        return None
+
+
+def load_price_history(path: Path) -> dict[str, list[dict]]:
+    empty = {fuel: [] for fuel in APP_FUELS}
+    if not path.is_file():
+        return empty
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return empty
+    if not isinstance(data, dict):
+        return empty
+    out: dict[str, list[dict]] = {}
+    for fuel in APP_FUELS:
+        rows = data.get(fuel, [])
+        series: list[dict] = []
+        if isinstance(rows, list):
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                date = str(row.get("date", "")).strip()
+                price = _price_number(str(row.get("price", "")).strip())
+                if date and price is not None:
+                    series.append({"date": date, "price": price})
+        out[fuel] = series
+    return out
+
+
+def update_price_history(path: Path, old: dict, new: dict, date_str: str) -> bool:
+    """Append Caltex prices that changed so the app can chart recent moves."""
+    history = load_price_history(path)
+    changed = False
+    for fuel in APP_FUELS:
+        new_price = _price_number(new.get(fuel, {}).get(APP_VENDOR))
+        if new_price is None:
+            continue
+        series = history.setdefault(fuel, [])
+        last = series[-1]["price"] if series else None
+        if last == new_price:
+            continue
+        old_price = _price_number(old.get(fuel, {}).get(APP_VENDOR))
+        if last is None and old_price is not None and old_price != new_price:
+            series.append({"date": date_str, "price": old_price})
+        series.append({"date": date_str, "price": new_price})
+        history[fuel] = series[-MAX_HISTORY_POINTS:]
+        changed = True
+    if changed:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(history, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+    return changed
 
 
 def format_summary(old: dict, new: dict) -> tuple[str, bool, list[str]]:
@@ -112,6 +177,15 @@ def main() -> int:
     old = load_prices(old_path)
     new = load_prices(new_path)
     summary, has_changes, app_changes = format_summary(old, new)
+
+    history_path = Path(
+        os.environ.get("HISTORY_FILE", "data/price-history.json")
+    )
+    history_date = os.environ.get("HISTORY_DATE") or datetime.now(
+        ZoneInfo("Asia/Hong_Kong")
+    ).strftime("%Y-%m-%d")
+    if app_changes:
+        update_price_history(history_path, old, new, history_date)
 
     summary_path.write_text(summary + "\n", encoding="utf-8")
 

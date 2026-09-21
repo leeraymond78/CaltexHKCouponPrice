@@ -61,7 +61,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/oilprice.json
+          git add data/oilprice.json data/price-history.json
           SUBJECT="chore: update oil prices ($(TZ=Asia/Hong_Kong date +%Y-%m-%d))"
           {
             echo "$SUBJECT"

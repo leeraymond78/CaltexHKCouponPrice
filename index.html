@@ -506,6 +506,295 @@
         outline-offset: 2px;
       }
 
+      .board-block {
+        padding-bottom: 0.7rem;
+        margin-bottom: 0.35rem;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .change-chip {
+        appearance: none;
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        width: 100%;
+        margin-top: 0.65rem;
+        min-height: var(--touch);
+        padding: 0.55rem 0.75rem;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: #121212;
+        color: var(--text);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        touch-action: manipulation;
+        transition:
+          transform 0.15s ease,
+          background 0.15s ease,
+          border-color 0.15s ease;
+      }
+
+      .change-chip[hidden] {
+        display: none;
+      }
+
+      .change-chip:active {
+        transform: scale(0.985);
+      }
+
+      .change-chip[data-dir="up"] {
+        background: color-mix(in srgb, var(--coral) 16%, #161010);
+        border-color: color-mix(in srgb, var(--coral) 42%, var(--border));
+      }
+
+      .change-chip[data-dir="down"] {
+        background: color-mix(in srgb, var(--green) 14%, #101610);
+        border-color: color-mix(in srgb, var(--green) 42%, var(--border));
+      }
+
+      .change-chip-icon {
+        flex-shrink: 0;
+        display: grid;
+        place-items: center;
+        width: 2.1rem;
+        height: 2.1rem;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 800;
+        line-height: 1;
+      }
+
+      .change-chip[data-dir="up"] .change-chip-icon {
+        background: color-mix(in srgb, var(--coral) 28%, transparent);
+        color: #ff8a72;
+      }
+
+      .change-chip[data-dir="down"] .change-chip-icon {
+        background: color-mix(in srgb, var(--green) 24%, transparent);
+        color: var(--green);
+      }
+
+      .change-chip-body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.12rem;
+      }
+
+      .change-chip-move {
+        display: flex;
+        align-items: baseline;
+        gap: 0.35rem;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .change-arrow {
+        color: rgba(255, 255, 255, 0.45);
+        font-weight: 600;
+      }
+
+      .change-chip-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .change-chip[data-dir="up"] .change-delta {
+        color: #ff8a72;
+      }
+
+      .change-chip[data-dir="down"] .change-delta {
+        color: var(--green);
+      }
+
+      .change-chip-hint {
+        flex-shrink: 0;
+        color: rgba(255, 255, 255, 0.45);
+      }
+
+      .sheet-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        align-items: flex-end;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.72);
+        padding: env(safe-area-inset-top, 0px) 0 0;
+      }
+
+      .sheet-backdrop.is-open {
+        display: flex;
+      }
+
+      .sheet {
+        width: min(390px, 100%);
+        max-height: min(88vh, 680px);
+        overflow: auto;
+        background: #141414;
+        border: 1px solid var(--border);
+        border-bottom: 0;
+        border-radius: 22px 22px 0 0;
+        padding: 0.45rem 1.1rem calc(1.35rem + env(safe-area-inset-bottom, 0px));
+        color: var(--text);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+      }
+
+      .sheet-handle {
+        width: 36px;
+        height: 4px;
+        margin: 0.2rem auto 0.75rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.18);
+      }
+
+      .sheet-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+
+      .sheet-header h2 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .sheet-sub {
+        margin: 0.3rem 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .sheet-close {
+        appearance: none;
+        flex-shrink: 0;
+        width: var(--touch);
+        height: var(--touch);
+        margin: -0.35rem -0.45rem 0 0;
+        border: 0;
+        border-radius: 12px;
+        background: #1f1f1f;
+        color: var(--text);
+        font: inherit;
+        font-size: 20px;
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      .chart-metric-toggle {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.25rem;
+        margin: 0.85rem 0 0;
+        padding: 0.25rem;
+        border-radius: 999px;
+        background: #101010;
+        border: 1px solid var(--border);
+      }
+
+      .chart-metric-toggle button {
+        appearance: none;
+        border: 0;
+        min-height: 40px;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.72);
+        border-radius: 999px;
+        padding: 0.45rem 0.4rem;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+
+      .chart-metric-toggle button[aria-pressed="true"] {
+        background: color-mix(in srgb, var(--teal) 22%, #1a1a1a);
+        color: var(--text);
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--teal) 40%, transparent);
+      }
+        margin: 0.95rem 0 0.35rem;
+        padding: 0.55rem 0.35rem 0.2rem;
+        border-radius: 16px;
+        background: #101010;
+        border: 1px solid var(--border);
+      }
+
+      .chart-wrap svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .change-list {
+        list-style: none;
+        margin: 0.55rem 0 0;
+        padding: 0;
+      }
+
+      .change-list li {
+        display: grid;
+        grid-template-columns: 4.6rem 1fr auto;
+        align-items: center;
+        gap: 0.55rem;
+        min-height: 2.35rem;
+        padding: 0.35rem 0;
+        border-top: 1px solid var(--border);
+        font-size: 13px;
+      }
+
+      .change-list .when {
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .change-list .path {
+        color: rgba(255, 255, 255, 0.88);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+
+      .change-list .delta {
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .change-list .delta.up,
+      .chart-delta.up {
+        color: #ff8a72;
+      }
+
+      .change-list .delta.down,
+      .chart-delta.down {
+        color: var(--green);
+      }
+
+      @media (min-width: 640px) {
+        .sheet-backdrop {
+          align-items: center;
+          padding: 1.5rem;
+        }
+
+        .sheet {
+          border-radius: 22px;
+          border-bottom: 1px solid var(--border);
+          max-height: min(80vh, 640px);
+        }
+
+        .sheet-handle {
+          display: none;
+        }
+      }
+
       @media (prefers-reduced-motion: reduce) {
         .flip.is-updating,
         .result-card.is-pulsing {
@@ -549,21 +838,64 @@
       </div>
 
       <section class="card price-card" aria-label="Price details">
-        <div class="price-row">
-          <span class="label">Board Price</span>
-          <span class="board-value flip" id="boardPriceDisplay">— / L</span>
-          <label class="board-edit" id="boardEdit" for="boardPriceInput">
-            <input
-              id="boardPriceInput"
-              type="number"
-              min="0"
-              step="0.01"
-              inputmode="decimal"
-              placeholder="0.00"
-              aria-label="Board price per litre"
-            />
-            <span class="suffix">/ L</span>
-          </label>
+        <div class="board-block">
+          <div class="price-row">
+            <span class="label">Board Price</span>
+            <span class="board-value flip" id="boardPriceDisplay">— / L</span>
+            <label class="board-edit" id="boardEdit" for="boardPriceInput">
+              <input
+                id="boardPriceInput"
+                type="number"
+                min="0"
+                step="0.01"
+                inputmode="decimal"
+                placeholder="0.00"
+                aria-label="Board price per litre"
+              />
+              <span class="suffix">/ L</span>
+            </label>
+          </div>
+          <button
+            type="button"
+            class="change-chip"
+            id="priceChangeBtn"
+            hidden
+            aria-haspopup="dialog"
+            aria-controls="priceChartSheet"
+            aria-expanded="false"
+          >
+            <span class="change-chip-icon" id="priceChangeIcon" aria-hidden="true"
+              >▲</span
+            >
+            <span class="change-chip-body">
+              <span class="change-chip-move">
+                <span id="priceChangeFrom">$—</span>
+                <span class="change-arrow" aria-hidden="true">→</span>
+                <span id="priceChangeTo">$—</span>
+              </span>
+              <span class="change-chip-meta">
+                <span class="change-delta" id="priceChangeDelta">—</span>
+                <span aria-hidden="true">·</span>
+                <span id="priceChangeDate">—</span>
+              </span>
+            </span>
+            <svg
+              class="change-chip-hint"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M9 6l6 6-6 6"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
         </div>
         <div class="price-row">
           <span class="label">Energy Card Discount</span>
@@ -646,10 +978,62 @@
       </section>
     </div>
 
+    <div class="sheet-backdrop" id="chartBackdrop" hidden>
+      <div
+        class="sheet"
+        id="priceChartSheet"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="chartTitle"
+        aria-describedby="chartSub"
+      >
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <div class="sheet-header">
+          <div>
+            <h2 id="chartTitle">Price changes</h2>
+            <p class="sheet-sub" id="chartSub">Recent recorded changes</p>
+          </div>
+          <button
+            type="button"
+            class="sheet-close"
+            id="chartClose"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div
+          class="chart-metric-toggle"
+          id="chartMetricToggle"
+          role="group"
+          aria-label="Chart metric"
+        >
+          <button type="button" data-metric="board" aria-pressed="true">
+            Board Price
+          </button>
+          <button type="button" data-metric="real" aria-pressed="false">
+            Real Price
+          </button>
+        </div>
+        <div class="chart-wrap">
+          <svg
+            id="priceChart"
+            viewBox="0 0 320 188"
+            role="img"
+            aria-labelledby="chartTitle chartSub"
+          ></svg>
+        </div>
+        <ol class="change-list" id="changeList"></ol>
+      </div>
+    </div>
+
     <script>
       const PRICE_URL = "data/oilprice.json";
+      const HISTORY_URL = "data/price-history.json";
       const CACHE_KEY = "price_cache";
       const CACHE_TIME_KEY = "price_cache_time";
+      const HISTORY_CACHE_KEY = "price_history_cache";
+      const CHART_CHANGES = 7;
       const ENERGY_KEYS = {
         "Standard Petrol": "energy_discount_regular",
         "Premium Petrol": "energy_discount_premium",
@@ -680,15 +1064,36 @@
       const realPriceEl = document.getElementById("realPrice");
       const litresEl = document.getElementById("litres");
       const youSaveEl = document.getElementById("youSave");
+      const priceChangeBtn = document.getElementById("priceChangeBtn");
+      const priceChangeIcon = document.getElementById("priceChangeIcon");
+      const priceChangeFrom = document.getElementById("priceChangeFrom");
+      const priceChangeTo = document.getElementById("priceChangeTo");
+      const priceChangeDelta = document.getElementById("priceChangeDelta");
+      const priceChangeDate = document.getElementById("priceChangeDate");
+      const chartBackdrop = document.getElementById("chartBackdrop");
+      const chartTitle = document.getElementById("chartTitle");
+      const chartSub = document.getElementById("chartSub");
+      const priceChart = document.getElementById("priceChart");
+      const changeList = document.getElementById("changeList");
+      const chartClose = document.getElementById("chartClose");
+      const chartMetricToggle = document.getElementById("chartMetricToggle");
 
       /** @type {Record<string, Record<string, number>>} */
       let prices = {};
+      /** @type {Record<string, Array<{date: string, price: number}>>} */
+      let priceHistory = {
+        "Standard Petrol": [],
+        "Premium Petrol": [],
+      };
       let selectedFuel = "Standard Petrol";
       let selectedCoupons = 2;
       let boardPrice = NaN;
       let manualBoardMode = false;
       let waitingWorker = null;
       let lastResultSignature = "";
+      let chartOpen = false;
+      let lastFocus = null;
+      let chartMetric = "board";
 
       function round2(value) {
         return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
@@ -748,6 +1153,352 @@
       function money(value) {
         if (!Number.isFinite(value)) return "—";
         return value.toFixed(2);
+      }
+
+      function signedMoney(value) {
+        if (!Number.isFinite(value) || value === 0) return "$0.00";
+        const abs = money(Math.abs(value));
+        return value > 0 ? `+$${abs}` : `−$${abs}`;
+      }
+
+      function hkToday() {
+        return new Date().toLocaleDateString("en-CA", {
+          timeZone: "Asia/Hong_Kong",
+        });
+      }
+
+      function formatShortDate(iso) {
+        if (!iso) return "—";
+        const date = new Date(`${iso}T12:00:00+08:00`);
+        if (Number.isNaN(date.getTime())) return iso;
+        return date.toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "short",
+          timeZone: "Asia/Hong_Kong",
+        });
+      }
+
+      function formatAxisDate(iso) {
+        const date = new Date(`${iso}T12:00:00+08:00`);
+        if (Number.isNaN(date.getTime())) return iso;
+        const day = date.toLocaleDateString("en-GB", {
+          day: "numeric",
+          timeZone: "Asia/Hong_Kong",
+        });
+        const month = date.toLocaleDateString("en-GB", {
+          month: "numeric",
+          timeZone: "Asia/Hong_Kong",
+        });
+        return `${day}/${month}`;
+      }
+
+      function fuelLabel(fuel = selectedFuel) {
+        return fuel === "Premium Petrol" ? "Premium" : "Regular";
+      }
+
+      function emptyHistory() {
+        return { "Standard Petrol": [], "Premium Petrol": [] };
+      }
+
+      function parseHistory(data) {
+        const out = emptyHistory();
+        if (!data || typeof data !== "object") return out;
+        for (const fuel of FUEL_TYPES) {
+          const rows = Array.isArray(data[fuel]) ? data[fuel] : [];
+          out[fuel] = rows
+            .map((row) => ({
+              date: String(row?.date ?? "").trim(),
+              price: round2(Number(row?.price)),
+            }))
+            .filter((row) => row.date && Number.isFinite(row.price))
+            .sort((a, b) => a.date.localeCompare(b.date));
+        }
+        return out;
+      }
+
+      function readHistoryCache() {
+        const raw = localStorage.getItem(HISTORY_CACHE_KEY);
+        if (!raw) return null;
+        try {
+          return parseHistory(JSON.parse(raw));
+        } catch {
+          return null;
+        }
+      }
+
+      function writeHistoryCache(data) {
+        localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(data));
+      }
+
+      async function fetchHistory() {
+        const response = await fetch(HISTORY_URL, { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return parseHistory(await response.json());
+      }
+
+      function boardSeriesForChart() {
+        const series = [...(priceHistory[selectedFuel] || [])];
+        const live = prices?.[COMPANY]?.[selectedFuel];
+        if (Number.isFinite(live)) {
+          const last = series[series.length - 1];
+          if (!last || round2(last.price) !== round2(live)) {
+            series.push({ date: hkToday(), price: round2(live) });
+          }
+        }
+        return series.slice(-(CHART_CHANGES + 1));
+      }
+
+      function currentEnergyDiscount() {
+        const value = Number(energyDiscountEl.value);
+        if (Number.isFinite(value) && value >= 0 && value <= 30) return value;
+        return defaultEnergyFor();
+      }
+
+      function realPriceForBoard(board) {
+        const result = calculate({
+          boardPrice: board,
+          energyDiscount: currentEnergyDiscount(),
+          couponCount: selectedCoupons,
+          couponValue: COUPON_VALUE,
+          rebatePerCoupon: REBATE_PER_COUPON,
+        });
+        return result.realPricePerLitre;
+      }
+
+      function seriesForChart() {
+        const board = boardSeriesForChart();
+        if (chartMetric !== "real") return board;
+        return board
+          .map((row) => ({
+            date: row.date,
+            price: realPriceForBoard(row.price),
+          }))
+          .filter((row) => Number.isFinite(row.price));
+      }
+
+      function latestChange() {
+        const series = boardSeriesForChart();
+        if (series.length < 2) return null;
+        const prev = series[series.length - 2];
+        const curr = series[series.length - 1];
+        return {
+          prev,
+          curr,
+          delta: round2(curr.price - prev.price),
+        };
+      }
+
+      function dirClass(delta) {
+        if (delta < 0) return "down";
+        if (delta > 0) return "up";
+        return "flat";
+      }
+
+      function svgEl(name, attrs = {}, text) {
+        const el = document.createElementNS("http://www.w3.org/2000/svg", name);
+        for (const [key, value] of Object.entries(attrs)) {
+          el.setAttribute(key, String(value));
+        }
+        if (text != null) el.textContent = text;
+        return el;
+      }
+
+      function syncChartMetricToggle() {
+        chartMetricToggle.querySelectorAll("button[data-metric]").forEach((el) => {
+          el.setAttribute(
+            "aria-pressed",
+            String(el.dataset.metric === chartMetric),
+          );
+        });
+      }
+
+      function renderChartSheet() {
+        const points = seriesForChart();
+        const metricLabel = chartMetric === "real" ? "real price" : "board price";
+        chartTitle.textContent = `${fuelLabel()} ${metricLabel}`;
+        const changeCount = Math.max(0, points.length - 1);
+        const countText =
+          changeCount === 0
+            ? "No recorded changes yet"
+            : `Last ${changeCount} recorded change${changeCount === 1 ? "" : "s"}`;
+        chartSub.textContent =
+          chartMetric === "real"
+            ? `${countText} · with current Energy Card discount`
+            : countText;
+
+        priceChart.replaceChildren();
+        changeList.replaceChildren();
+        if (points.length === 0) return;
+
+        const w = 320;
+        const h = 188;
+        const pad = { t: 18, r: 14, b: 36, l: 40 };
+        const values = points.map((point) => point.price);
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const span = max - min || 0.4;
+        const yMin = min - span * 0.18;
+        const yMax = max + span * 0.18;
+        const innerW = w - pad.l - pad.r;
+        const innerH = h - pad.t - pad.b;
+        const xAt = (i) =>
+          pad.l +
+          (points.length === 1 ? innerW / 2 : (i / (points.length - 1)) * innerW);
+        const yAt = (price) =>
+          pad.t + (1 - (price - yMin) / (yMax - yMin)) * innerH;
+
+        for (const tick of [min, max]) {
+          const y = yAt(tick);
+          priceChart.appendChild(
+            svgEl("line", {
+              x1: pad.l,
+              x2: w - pad.r,
+              y1: y,
+              y2: y,
+              stroke: "rgba(255,255,255,0.08)",
+              "stroke-width": 1,
+            }),
+          );
+          priceChart.appendChild(
+            svgEl(
+              "text",
+              {
+                x: pad.l - 6,
+                y: y + 3,
+                fill: "#888888",
+                "font-size": 9,
+                "text-anchor": "end",
+                "font-family": "-apple-system, sans-serif",
+              },
+              tick.toFixed(2),
+            ),
+          );
+        }
+
+        for (let i = 1; i < points.length; i += 1) {
+          const up = points[i].price > points[i - 1].price;
+          const down = points[i].price < points[i - 1].price;
+          const color = down ? "#4ade80" : up ? "#ff6b4a" : "#888888";
+          priceChart.appendChild(
+            svgEl("line", {
+              x1: xAt(i - 1),
+              y1: yAt(points[i - 1].price),
+              x2: xAt(i),
+              y2: yAt(points[i].price),
+              stroke: color,
+              "stroke-width": 2.4,
+              "stroke-linecap": "round",
+            }),
+          );
+        }
+
+        points.forEach((point, i) => {
+          const prev = points[i - 1];
+          const color =
+            i === 0
+              ? "#ffffff"
+              : point.price < prev.price
+                ? "#4ade80"
+                : point.price > prev.price
+                  ? "#ff6b4a"
+                  : "#ffffff";
+          priceChart.appendChild(
+            svgEl("circle", {
+              cx: xAt(i),
+              cy: yAt(point.price),
+              r: i === points.length - 1 ? 4.2 : 3.2,
+              fill: color,
+              stroke: "#141414",
+              "stroke-width": 1.5,
+            }),
+          );
+          priceChart.appendChild(
+            svgEl(
+              "text",
+              {
+                x: xAt(i),
+                y: h - 12,
+                fill: "#888888",
+                "font-size": 9,
+                "text-anchor": "middle",
+                "font-family": "-apple-system, sans-serif",
+              },
+              formatAxisDate(point.date),
+            ),
+          );
+        });
+
+        for (let i = 1; i < points.length; i += 1) {
+          const prev = points[i - 1];
+          const curr = points[i];
+          const delta = round2(curr.price - prev.price);
+          const dir = dirClass(delta);
+          const li = document.createElement("li");
+          const when = document.createElement("span");
+          when.className = "when";
+          when.textContent = formatShortDate(curr.date);
+          const path = document.createElement("span");
+          path.className = "path";
+          path.textContent = `$${money(prev.price)} → $${money(curr.price)}`;
+          const deltaEl = document.createElement("span");
+          deltaEl.className = `delta ${dir}`;
+          deltaEl.textContent = signedMoney(delta);
+          li.append(when, path, deltaEl);
+          changeList.appendChild(li);
+        }
+      }
+
+      function renderPriceChange() {
+        const change = manualBoardMode ? null : latestChange();
+        if (!change) {
+          priceChangeBtn.hidden = true;
+          priceChangeBtn.setAttribute("aria-expanded", "false");
+          return;
+        }
+        const dir = dirClass(change.delta);
+        priceChangeBtn.hidden = false;
+        priceChangeBtn.dataset.dir = dir;
+        priceChangeIcon.textContent = dir === "down" ? "▼" : "▲";
+        priceChangeFrom.textContent = `$${money(change.prev.price)}`;
+        priceChangeTo.textContent = `$${money(change.curr.price)}`;
+        priceChangeDelta.textContent = signedMoney(change.delta);
+        priceChangeDate.textContent = formatShortDate(change.curr.date);
+        const verb =
+          dir === "down"
+            ? "decreased"
+            : dir === "up"
+              ? "increased"
+              : "unchanged";
+        priceChangeBtn.setAttribute(
+          "aria-label",
+          `Board price ${verb} from $${money(change.prev.price)} to $${money(change.curr.price)} on ${formatShortDate(change.curr.date)}. Show recent changes.`,
+        );
+        if (chartOpen) renderChartSheet();
+      }
+
+      function openChart() {
+        if (priceChangeBtn.hidden) return;
+        lastFocus = document.activeElement;
+        chartOpen = true;
+        syncChartMetricToggle();
+        renderChartSheet();
+        chartBackdrop.hidden = false;
+        chartBackdrop.classList.add("is-open");
+        priceChangeBtn.setAttribute("aria-expanded", "true");
+        document.body.style.overflow = "hidden";
+        chartClose.focus();
+      }
+
+      function closeChart() {
+        if (!chartOpen) return;
+        chartOpen = false;
+        chartBackdrop.classList.remove("is-open");
+        chartBackdrop.hidden = true;
+        priceChangeBtn.setAttribute("aria-expanded", "false");
+        document.body.style.overflow = "";
+        if (lastFocus && typeof lastFocus.focus === "function") {
+          lastFocus.focus();
+        }
       }
 
       function setTextWithFlip(el, next) {
@@ -923,6 +1674,7 @@
           setTextWithFlip(realPriceEl, "$— / L");
           setTextWithFlip(litresEl, "— L");
           setTextWithFlip(youSaveEl, "$—");
+          if (chartOpen) renderChartSheet();
           return;
         }
 
@@ -958,10 +1710,12 @@
           if (lastResultSignature) pulseResult();
           lastResultSignature = signature;
         }
+        if (chartOpen) renderChartSheet();
       }
 
       function refreshUi() {
         syncBoardPriceFromSelection();
+        renderPriceChange();
         renderCalculation();
       }
 
@@ -978,6 +1732,8 @@
 
       async function loadPrices() {
         const cached = readLocalCache();
+        const cachedHistory = readHistoryCache();
+        if (cachedHistory) priceHistory = cachedHistory;
 
         if (cached) {
           prices = parseJsonToPrices(cached.text);
@@ -991,8 +1747,18 @@
           setUpdated("loading", "Getting latest prices online…");
         }
 
-        try {
-          const text = await fetchLivePrices();
+        const [priceResult, historyResult] = await Promise.allSettled([
+          fetchLivePrices(),
+          fetchHistory(),
+        ]);
+
+        if (historyResult.status === "fulfilled") {
+          priceHistory = historyResult.value;
+          writeHistoryCache(priceHistory);
+        }
+
+        if (priceResult.status === "fulfilled") {
+          const text = priceResult.value;
           const time = writeLocalCache(text);
           applyPrices(
             parseJsonToPrices(text),
@@ -1000,25 +1766,27 @@
             "live",
             `Latest online · updated ${formatTime(time)}`,
           );
-        } catch (liveError) {
-          if (cached) {
-            applyPrices(
-              parseJsonToPrices(cached.text),
-              cached.time,
-              "cached",
-              `Couldn’t reach live data · using saved prices from ${formatTime(cached.time)}`,
-            );
-            return;
-          }
-
-          prices = {};
-          setManualBoardMode(true);
-          setUpdated(
-            "error",
-            `Couldn’t load live prices (${liveError.message || "error"})`,
-          );
-          refreshUi();
+          return;
         }
+
+        const liveError = priceResult.reason || new Error("error");
+        if (cached) {
+          applyPrices(
+            parseJsonToPrices(cached.text),
+            cached.time,
+            "cached",
+            `Couldn’t reach live data · using saved prices from ${formatTime(cached.time)}`,
+          );
+          return;
+        }
+
+        prices = {};
+        setManualBoardMode(true);
+        setUpdated(
+          "error",
+          `Couldn’t load live prices (${liveError.message || "error"})`,
+        );
+        refreshUi();
       }
 
       function showUpdateBanner(worker) {
@@ -1065,6 +1833,22 @@
           return;
         }
         waitingWorker.postMessage({ type: "SKIP_WAITING" });
+      });
+
+      priceChangeBtn.addEventListener("click", openChart);
+      chartClose.addEventListener("click", closeChart);
+      chartBackdrop.addEventListener("click", (event) => {
+        if (event.target === chartBackdrop) closeChart();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeChart();
+      });
+      chartMetricToggle.addEventListener("click", (event) => {
+        const btn = event.target.closest("button[data-metric]");
+        if (!btn) return;
+        chartMetric = btn.dataset.metric === "real" ? "real" : "board";
+        syncChartMetricToggle();
+        renderChartSheet();
       });
 
       fuelToggle.addEventListener("click", (event) => {

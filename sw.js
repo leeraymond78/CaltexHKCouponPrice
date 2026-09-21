@@ -1,5 +1,5 @@
-const CACHE_NAME = "petrol-calc-v13";
-const PRICE_CACHE = "petrol-calc-price-v13";
+const CACHE_NAME = "petrol-calc-v15";
+const PRICE_CACHE = "petrol-calc-price-v15";
 const PRICE_URL = "./data/oilprice.json";
 const PRICE_TTL_MS = 6 * 60 * 60 * 1000;
 
@@ -8,6 +8,7 @@ const STATIC_ASSETS = [
   "./index.html",
   "./manifest.json",
   "./data/oilprice.json",
+  "./data/price-history.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/apple-touch-icon.png",
@@ -41,7 +42,8 @@ function isPriceRequest(request) {
     const url = new URL(request.url);
     return (
       url.origin === self.location.origin &&
-      url.pathname.endsWith("/data/oilprice.json")
+      (url.pathname.endsWith("/data/oilprice.json") ||
+        url.pathname.endsWith("/data/price-history.json"))
     );
   } catch {
     return false;
