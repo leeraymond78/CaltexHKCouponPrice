@@ -1061,6 +1061,10 @@
       const SELECTED_FUEL_KEY = "selected_fuel";
       const CHART_CHANGES = 7;
       const ENERGY_KEYS = {
+        "Standard Petrol": "starcard_discount_gold",
+        "Premium Petrol": "starcard_discount_platinum",
+      };
+      const LEGACY_ENERGY_KEYS = {
         "Standard Petrol": "energy_discount_regular",
         "Premium Petrol": "energy_discount_premium",
       };
@@ -1604,30 +1608,60 @@
         return DEFAULT_ENERGY[fuel] ?? 11;
       }
 
+      function inStarCardRange(value) {
+        return Number.isFinite(value) && value >= 0 && value <= 30;
+      }
+
+      function clampStarCardDiscount(value, fuel = selectedFuel) {
+        if (!Number.isFinite(value)) return defaultEnergyFor(fuel);
+        return round2(Math.min(30, Math.max(0, value)));
+      }
+
       function loadEnergyDiscountFor(fuel = selectedFuel) {
-        // Drop legacy single-key save from earlier builds.
         localStorage.removeItem("energy_discount");
 
         const key = ENERGY_KEYS[fuel];
-        const raw = key ? localStorage.getItem(key) : null;
-        if (raw == null || raw === "") {
-          energyDiscountEl.value = String(defaultEnergyFor(fuel));
-          validateEnergyDiscount();
-          return;
+        const legacyKey = LEGACY_ENERGY_KEYS[fuel];
+        let raw = key ? localStorage.getItem(key) : null;
+        if ((raw == null || raw === "") && legacyKey) {
+          raw = localStorage.getItem(legacyKey);
+          if (raw != null && raw !== "") {
+            const migrated = Number(raw);
+            if (key && inStarCardRange(migrated)) {
+              localStorage.setItem(key, String(round2(migrated)));
+            }
+          }
+          localStorage.removeItem(legacyKey);
         }
+
         const value = Number(raw);
-        if (Number.isFinite(value) && value >= 0 && value <= 30) {
-          energyDiscountEl.value = String(round2(value));
-        } else {
-          energyDiscountEl.value = String(defaultEnergyFor(fuel));
-        }
+        energyDiscountEl.value = String(
+          inStarCardRange(value)
+            ? round2(value)
+            : defaultEnergyFor(fuel),
+        );
         validateEnergyDiscount();
       }
 
       function saveEnergyDiscount(value, fuel = selectedFuel) {
         const key = ENERGY_KEYS[fuel];
-        if (!key || !Number.isFinite(value)) return;
-        localStorage.setItem(key, String(round2(value)));
+        if (!key) return;
+        const clamped = clampStarCardDiscount(value, fuel);
+        try {
+          localStorage.setItem(key, String(clamped));
+        } catch {
+          /* ignore quota / private mode */
+        }
+      }
+
+      function persistCurrentStarCard(fuel = selectedFuel) {
+        const clamped = clampStarCardDiscount(
+          Number(energyDiscountEl.value),
+          fuel,
+        );
+        energyDiscountEl.value = String(clamped);
+        saveEnergyDiscount(clamped, fuel);
+        validateEnergyDiscount();
       }
 
       function parseJsonToPrices(text) {
@@ -1711,12 +1745,7 @@
       }
 
       function clampEnergyOnBlur() {
-        let value = Number(energyDiscountEl.value);
-        if (!Number.isFinite(value)) value = defaultEnergyFor();
-        value = Math.min(30, Math.max(0, value));
-        energyDiscountEl.value = String(round2(value));
-        saveEnergyDiscount(value);
-        validateEnergyDiscount();
+        persistCurrentStarCard();
         renderCalculation();
       }
 
@@ -1930,6 +1959,7 @@
       fuelToggle.addEventListener("click", (event) => {
         const btn = event.target.closest("button[data-fuel]");
         if (!btn) return;
+        persistCurrentStarCard(selectedFuel);
         selectedFuel = btn.dataset.fuel;
         writeSelectedFuel(selectedFuel);
         syncFuelToggle();
@@ -1958,6 +1988,7 @@
       });
       energyDiscountEl.addEventListener("change", clampEnergyOnBlur);
       energyDiscountEl.addEventListener("blur", clampEnergyOnBlur);
+      window.addEventListener("pagehide", () => persistCurrentStarCard());
 
       boardPriceInput.addEventListener("input", () => {
         syncBoardPriceFromSelection();
