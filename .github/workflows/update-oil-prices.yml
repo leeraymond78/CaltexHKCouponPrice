@@ -74,4 +74,4 @@ jobs:
 
       - name: No Caltex app changes
         if: steps.diff.outputs.app_changed != 'true'
-        run: echo "No Caltex Standard/Premium changes — skipped commit."
+        run: echo "No Caltex Gold/Platinum changes — skipped commit."

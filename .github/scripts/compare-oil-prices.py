@@ -149,7 +149,7 @@ def format_summary(old: dict, new: dict) -> tuple[str, bool, list[str]]:
         n = new.get(fuel, {}).get("Caltex")
         if o is None and n is None:
             continue
-        label = "Regular" if fuel == "Standard Petrol" else "Premium"
+        label = "Gold" if fuel == "Standard Petrol" else "Platinum"
         if o == n:
             caltex.append(f"- Caltex {label}: ${n} (unchanged)")
         else:

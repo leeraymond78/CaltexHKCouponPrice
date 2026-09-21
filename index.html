@@ -36,6 +36,8 @@
         --font: -apple-system, "SF Pro", "SF Pro Text", "Helvetica Neue",
           sans-serif;
         --touch: 44px;
+        --box-pad: 0.7rem 0.85rem;
+        --box-gap: 0.7rem;
       }
 
       * {
@@ -53,8 +55,8 @@
       }
 
       body {
-        padding: calc(1.25rem + env(safe-area-inset-top, 0px)) 1.15rem
-          calc(2rem + env(safe-area-inset-bottom, 0px));
+        padding: calc(0.7rem + env(safe-area-inset-top, 0px)) 1rem
+          calc(0.75rem + env(safe-area-inset-bottom, 0px));
         background: var(--bg);
       }
 
@@ -76,7 +78,7 @@
         margin: 0 auto;
         display: flex;
         flex-direction: column;
-        gap: 1.05rem;
+        gap: var(--box-gap);
       }
 
       .sr-only {
@@ -125,8 +127,7 @@
         z-index: 1;
       }
 
-      .header h1,
-      .header .updated {
+      .header h1 {
         filter: none;
         -webkit-filter: none;
         opacity: 1;
@@ -140,17 +141,19 @@
         line-height: 1.25;
       }
 
-      .header .updated {
-        margin: 0.4rem 0 0;
+      .updated {
+        margin: 0;
         color: var(--muted);
         font-size: 12px;
+        text-align: center;
+        line-height: 1.35;
       }
 
-      .header .updated[data-state="loading"] {
+      .updated[data-state="loading"] {
         color: var(--teal);
       }
 
-      .header .updated[data-state="error"] {
+      .updated[data-state="error"] {
         color: var(--coral);
       }
 
@@ -222,7 +225,13 @@
           transform 0.18s ease;
       }
 
-      .fuel-toggle button[aria-pressed="true"] {
+      .fuel-toggle button[data-fuel="Standard Petrol"][aria-pressed="true"] {
+        background: linear-gradient(135deg, #16a34a 0%, #4ade80 100%);
+        color: var(--text);
+        box-shadow: 0 8px 20px rgba(34, 197, 94, 0.3);
+      }
+
+      .fuel-toggle button[data-fuel="Premium Petrol"][aria-pressed="true"] {
         background: linear-gradient(135deg, #ff6b4a 0%, #ff8f3d 100%);
         color: var(--text);
         box-shadow: 0 8px 20px rgba(255, 107, 74, 0.28);
@@ -231,8 +240,8 @@
       .card {
         background: var(--card);
         border: 1px solid var(--border);
-        border-radius: 20px;
-        padding: 1.05rem 1.1rem;
+        border-radius: 18px;
+        padding: var(--box-pad);
       }
 
       .price-row {
@@ -240,7 +249,7 @@
         align-items: center;
         justify-content: space-between;
         gap: 0.75rem;
-        min-height: var(--touch);
+        min-height: 40px;
       }
 
       .price-row + .price-row {
@@ -308,8 +317,8 @@
         font-size: 16px;
         font-weight: 700;
         text-align: right;
-        padding: 0.35rem 0.1rem;
-        min-height: var(--touch);
+        padding: 0.2rem 0.1rem;
+        min-height: 40px;
         outline: none;
       }
 
@@ -331,7 +340,7 @@
         align-items: center;
         gap: 0.35rem;
         color: var(--teal);
-        min-height: var(--touch);
+        min-height: 40px;
       }
 
       .energy-edit .prefix {
@@ -358,7 +367,8 @@
 
       .energy-hint {
         margin: 0;
-        min-height: 1rem;
+        max-height: 0;
+        overflow: hidden;
         color: var(--coral);
         font-size: 11px;
         text-align: right;
@@ -367,11 +377,13 @@
       }
 
       .energy-hint.is-visible {
+        max-height: 1.4rem;
+        margin-top: 0.2rem;
         opacity: 1;
       }
 
       .coupon-label {
-        margin: 0 0 0.7rem;
+        margin: 0 0 0.45rem;
         font-size: 13px;
         font-weight: 500;
         color: var(--muted);
@@ -413,7 +425,7 @@
       }
 
       .coupon-summary {
-        margin: 0.85rem 0 0;
+        margin: 0.45rem 0 0;
         color: var(--muted);
         font-size: 13px;
         line-height: 1.4;
@@ -447,23 +459,32 @@
         }
       }
 
+      .net-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+
       .net-label {
         margin: 0;
         color: var(--muted);
-        font-size: 13px;
+        font-size: 14px;
+        font-weight: 500;
       }
 
       .net-value {
-        margin: 0.2rem 0 0;
-        font-size: 42px;
+        margin: 0;
+        font-size: 32px;
         font-weight: 700;
         letter-spacing: -0.03em;
         line-height: 1.1;
+        white-space: nowrap;
       }
 
       .result-divider {
         height: 1px;
-        margin: 0.95rem 0;
+        margin: 0.55rem 0;
         background: var(--border);
         border: 0;
       }
@@ -473,11 +494,11 @@
         align-items: center;
         justify-content: space-between;
         gap: 0.75rem;
-        min-height: 1.7rem;
+        min-height: 1.45rem;
       }
 
       .stat-row + .stat-row {
-        margin-top: 0.55rem;
+        margin-top: 0.35rem;
       }
 
       .stat-row .k {
@@ -507,8 +528,8 @@
       }
 
       .board-block {
-        padding-bottom: 0.7rem;
-        margin-bottom: 0.35rem;
+        padding-bottom: 0.45rem;
+        margin-bottom: 0.25rem;
         border-bottom: 1px solid var(--border);
       }
 
@@ -516,11 +537,11 @@
         appearance: none;
         display: flex;
         align-items: center;
-        gap: 0.7rem;
+        gap: 0.55rem;
         width: 100%;
-        margin-top: 0.65rem;
-        min-height: var(--touch);
-        padding: 0.55rem 0.75rem;
+        margin-top: 0.4rem;
+        min-height: 40px;
+        padding: 0.4rem 0.65rem;
         border-radius: 14px;
         border: 1px solid var(--border);
         background: #121212;
@@ -557,8 +578,8 @@
         flex-shrink: 0;
         display: grid;
         place-items: center;
-        width: 2.1rem;
-        height: 2.1rem;
+        width: 1.75rem;
+        height: 1.75rem;
         border-radius: 10px;
         font-size: 15px;
         font-weight: 800;
@@ -814,9 +835,6 @@
           >Offline</span
         >
         <h1>Caltex HK StarCard Discount</h1>
-        <p class="updated" id="updated" data-state="loading">
-          Getting latest prices online…
-        </p>
       </header>
 
       <div class="warning" id="priceWarning" role="status" aria-live="polite">
@@ -827,13 +845,13 @@
         class="fuel-toggle"
         id="fuelToggle"
         role="group"
-        aria-label="Fuel type"
+        aria-label="Grade"
       >
         <button type="button" data-fuel="Standard Petrol" aria-pressed="true">
-          Regular
+          Gold
         </button>
         <button type="button" data-fuel="Premium Petrol" aria-pressed="false">
-          Premium
+          Platinum
         </button>
       </div>
 
@@ -898,7 +916,7 @@
           </button>
         </div>
         <div class="price-row">
-          <span class="label">Energy Card Discount</span>
+          <span class="label">StarCard Discount</span>
           <label class="energy-edit" for="energyDiscount">
             <span class="prefix">-$</span>
             <input
@@ -909,7 +927,7 @@
               step="0.1"
               inputmode="decimal"
               value="11"
-              aria-label="Energy card discount"
+              aria-label="StarCard discount"
               aria-describedby="energyHint"
             />
             <svg
@@ -936,8 +954,8 @@
         <p class="energy-hint" id="energyHint">Enter a value between 0 and 30</p>
       </section>
 
-      <section class="card coupon-card" aria-label="Coupons">
-        <p class="coupon-label">Coupons</p>
+      <section class="card coupon-card" aria-label="Buy $300 Free $50 Coupons">
+        <p class="coupon-label">Buy $300 Free $50 Coupons</p>
         <div
           class="coupon-grid"
           id="couponGrid"
@@ -951,7 +969,7 @@
           <button type="button" data-count="5" aria-pressed="false">5</button>
         </div>
         <p class="coupon-summary flip" id="couponSummary">
-          2 × $300 = $600 total &nbsp;•&nbsp; $100 rebate
+          2 × $300 = $600 total &nbsp;•&nbsp; $100 discount
         </p>
       </section>
 
@@ -960,8 +978,10 @@
         id="resultCard"
         aria-label="Calculation result"
       >
-        <p class="net-label">Net Payment</p>
-        <p class="net-value flip" id="netPayment">$—</p>
+        <div class="net-row">
+          <p class="net-label">Net Payment</p>
+          <p class="net-value flip" id="netPayment">$—</p>
+        </div>
         <hr class="result-divider" />
         <div class="stat-row">
           <span class="k">Real Price</span>
@@ -976,6 +996,10 @@
           <span class="v green flip" id="youSave">$—</span>
         </div>
       </section>
+
+      <p class="updated" id="updated" data-state="loading" aria-live="polite">
+        Getting latest prices online…
+      </p>
     </div>
 
     <div class="sheet-backdrop" id="chartBackdrop" hidden>
@@ -1033,6 +1057,8 @@
       const CACHE_KEY = "price_cache";
       const CACHE_TIME_KEY = "price_cache_time";
       const HISTORY_CACHE_KEY = "price_history_cache";
+      const CHART_METRIC_KEY = "chart_metric";
+      const SELECTED_FUEL_KEY = "selected_fuel";
       const CHART_CHANGES = 7;
       const ENERGY_KEYS = {
         "Standard Petrol": "energy_discount_regular",
@@ -1085,7 +1111,7 @@
         "Standard Petrol": [],
         "Premium Petrol": [],
       };
-      let selectedFuel = "Standard Petrol";
+      let selectedFuel = readSelectedFuel();
       let selectedCoupons = 2;
       let boardPrice = NaN;
       let manualBoardMode = false;
@@ -1093,7 +1119,7 @@
       let lastResultSignature = "";
       let chartOpen = false;
       let lastFocus = null;
-      let chartMetric = "board";
+      let chartMetric = readChartMetric();
 
       function round2(value) {
         return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
@@ -1193,7 +1219,7 @@
       }
 
       function fuelLabel(fuel = selectedFuel) {
-        return fuel === "Premium Petrol" ? "Premium" : "Regular";
+        return fuel === "Premium Petrol" ? "Platinum" : "Gold";
       }
 
       function emptyHistory() {
@@ -1234,6 +1260,52 @@
         const response = await fetch(HISTORY_URL, { cache: "no-store" });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return parseHistory(await response.json());
+      }
+
+      function readChartMetric() {
+        try {
+          return localStorage.getItem(CHART_METRIC_KEY) === "real"
+            ? "real"
+            : "board";
+        } catch {
+          return "board";
+        }
+      }
+
+      function writeChartMetric(metric) {
+        chartMetric = metric === "real" ? "real" : "board";
+        try {
+          localStorage.setItem(CHART_METRIC_KEY, chartMetric);
+        } catch {
+          /* ignore quota / private mode */
+        }
+      }
+
+      function readSelectedFuel() {
+        try {
+          const saved = localStorage.getItem(SELECTED_FUEL_KEY);
+          return FUEL_TYPES.includes(saved) ? saved : "Standard Petrol";
+        } catch {
+          return "Standard Petrol";
+        }
+      }
+
+      function writeSelectedFuel(fuel) {
+        selectedFuel = FUEL_TYPES.includes(fuel) ? fuel : "Standard Petrol";
+        try {
+          localStorage.setItem(SELECTED_FUEL_KEY, selectedFuel);
+        } catch {
+          /* ignore quota / private mode */
+        }
+      }
+
+      function syncFuelToggle() {
+        fuelToggle.querySelectorAll("button[data-fuel]").forEach((el) => {
+          el.setAttribute(
+            "aria-pressed",
+            String(el.dataset.fuel === selectedFuel),
+          );
+        });
       }
 
       function boardSeriesForChart() {
@@ -1277,7 +1349,7 @@
       }
 
       function latestChange() {
-        const series = boardSeriesForChart();
+        const series = seriesForChart();
         if (series.length < 2) return null;
         const prev = series[series.length - 2];
         const curr = series[series.length - 1];
@@ -1323,7 +1395,7 @@
             : `Last ${changeCount} recorded change${changeCount === 1 ? "" : "s"}`;
         chartSub.textContent =
           chartMetric === "real"
-            ? `${countText} · with current Energy Card discount`
+            ? `${countText} · −$${money(currentEnergyDiscount())}/L`
             : countText;
 
         priceChart.replaceChildren();
@@ -1469,11 +1541,11 @@
             : dir === "up"
               ? "increased"
               : "unchanged";
+        const kind = chartMetric === "real" ? "Real price" : "Board price";
         priceChangeBtn.setAttribute(
           "aria-label",
-          `Board price ${verb} from $${money(change.prev.price)} to $${money(change.curr.price)} on ${formatShortDate(change.curr.date)}. Show recent changes.`,
+          `${kind} ${verb} from $${money(change.prev.price)} to $${money(change.curr.price)} on ${formatShortDate(change.curr.date)}. Show recent changes.`,
         );
-        if (chartOpen) renderChartSheet();
       }
 
       function openChart() {
@@ -1662,7 +1734,7 @@
 
         setTextWithFlip(
           couponSummary,
-          `${selectedCoupons} × $${COUPON_VALUE} = $${totalSpend} total  •  $${totalRebate} rebate`,
+          `${selectedCoupons} × $${COUPON_VALUE} = $${totalSpend} total  •  $${totalRebate} discount`,
         );
 
         if (
@@ -1674,6 +1746,7 @@
           setTextWithFlip(realPriceEl, "$— / L");
           setTextWithFlip(litresEl, "— L");
           setTextWithFlip(youSaveEl, "$—");
+          if (chartMetric === "real") renderPriceChange();
           if (chartOpen) renderChartSheet();
           return;
         }
@@ -1710,6 +1783,7 @@
           if (lastResultSignature) pulseResult();
           lastResultSignature = signature;
         }
+        if (chartMetric === "real") renderPriceChange();
         if (chartOpen) renderChartSheet();
       }
 
@@ -1847,20 +1921,18 @@
         const btn = event.target.closest("button[data-metric]");
         if (!btn) return;
         chartMetric = btn.dataset.metric === "real" ? "real" : "board";
+        writeChartMetric(chartMetric);
         syncChartMetricToggle();
         renderChartSheet();
+        renderPriceChange();
       });
 
       fuelToggle.addEventListener("click", (event) => {
         const btn = event.target.closest("button[data-fuel]");
         if (!btn) return;
         selectedFuel = btn.dataset.fuel;
-        fuelToggle.querySelectorAll("button").forEach((el) => {
-          el.setAttribute(
-            "aria-pressed",
-            String(el.dataset.fuel === selectedFuel),
-          );
-        });
+        writeSelectedFuel(selectedFuel);
+        syncFuelToggle();
         loadEnergyDiscountFor(selectedFuel);
         refreshUi();
       });
@@ -1902,7 +1974,9 @@
       window.getPrices = () => prices;
 
       updateOnlineUi();
+      syncFuelToggle();
       loadEnergyDiscountFor(selectedFuel);
+      syncChartMetricToggle();
       registerServiceWorker();
       loadPrices();
     </script>

@@ -1,6 +1,6 @@
 # Petrol Coupon Calc
 
-A simple calculator for **Hong Kong Caltex petrol coupons**. It shows how much you actually pay per litre after the Energy Card discount and coupon rebate.
+A simple calculator for **Hong Kong Caltex petrol coupons**. It shows how much you actually pay per litre after the StarCard and coupon discounts.
 
 ## Open the app
 
@@ -13,8 +13,8 @@ On a phone, you can also add it to your home screen (Share → Add to Home Scree
 ## How to use it
 
 1. Open the link above.
-2. Choose **Regular** or **Premium**. Board prices are loaded automatically (Hong Kong dollars per litre).
-3. Set your **Energy Card discount** (HK$ per litre).
+2. Choose **Gold** or **Platinum**. Board prices are loaded automatically (Hong Kong dollars per litre).
+3. Set your **StarCard discount** (HK$ per litre).
 4. Pick how many **$300 coupons** you will use (1–5).
 5. Read **Net Payment**, **Real Price** per litre, litres filled, and how much you save.
 
