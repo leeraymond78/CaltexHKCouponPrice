@@ -22,6 +22,11 @@
     <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192" />
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
     <title>Caltex HK StarCard Discount</title>
+    <script
+      defer
+      src="https://cloud.umami.is/script.js"
+      data-website-id="f6b9a90c-dd74-4889-bad6-9b712a85d3f5"
+    ></script>
     <style>
       :root {
         --bg: #0d0d0d;
@@ -1118,6 +1123,46 @@
       const FUEL_TYPES = ["Standard Petrol", "Premium Petrol"];
       const COUPON_VALUE = 300;
       const REBATE_PER_COUPON = 50;
+      const PWA_INSTALL_TRACKED_KEY = "pwa_install_tracked";
+
+      function trackEvent(name, data) {
+        try {
+          if (typeof umami === "undefined" || typeof umami.track !== "function") {
+            return;
+          }
+          if (data == null) umami.track(name);
+          else umami.track(name, data);
+        } catch {
+          /* analytics must never break the app */
+        }
+      }
+
+      function isRunningAsPwa() {
+        return (
+          window.matchMedia("(display-mode: standalone)").matches ||
+          window.matchMedia("(display-mode: fullscreen)").matches ||
+          window.navigator.standalone === true
+        );
+      }
+
+      function trackPwaInstall(source) {
+        try {
+          if (localStorage.getItem(PWA_INSTALL_TRACKED_KEY) === "1") return;
+          localStorage.setItem(PWA_INSTALL_TRACKED_KEY, "1");
+        } catch {
+          /* still send once this session */
+        }
+        trackEvent("pwa_installed", { source });
+      }
+
+      function setupPwaInstallTracking() {
+        window.addEventListener("appinstalled", () => {
+          trackPwaInstall("appinstalled");
+        });
+        if (isRunningAsPwa()) {
+          trackPwaInstall("standalone");
+        }
+      }
 
       const updatedEl = document.getElementById("updated");
       const appEl = document.getElementById("app");
@@ -1634,6 +1679,10 @@
         chartBackdrop.classList.add("is-open");
         priceChangeBtn.setAttribute("aria-expanded", "true");
         document.body.classList.add("sheet-open");
+        trackEvent("open_price_chart", {
+          grade: fuelLabel(),
+          metric: chartMetric,
+        });
         chartClose.focus();
       }
 
@@ -1744,6 +1793,7 @@
             ? round2(value)
             : defaultEnergyFor(fuel),
         );
+        energyDiscountEl.dataset.lastTracked = `${fuel}:${Number(energyDiscountEl.value)}`;
         validateEnergyDiscount();
       }
 
@@ -1850,7 +1900,15 @@
 
       function clampEnergyOnBlur() {
         persistCurrentStarCard();
+        const value = Number(energyDiscountEl.value);
         renderCalculation();
+        const signature = `${selectedFuel}:${value}`;
+        if (energyDiscountEl.dataset.lastTracked === signature) return;
+        energyDiscountEl.dataset.lastTracked = signature;
+        trackEvent("change_starcard_discount", {
+          grade: fuelLabel(),
+          value,
+        });
       }
 
       function pulseResult() {
@@ -2064,20 +2122,26 @@
       fuelToggle.addEventListener("click", (event) => {
         const btn = event.target.closest("button[data-fuel]");
         if (!btn) return;
+        const nextFuel = btn.dataset.fuel;
+        if (nextFuel === selectedFuel) return;
         persistCurrentStarCard(selectedFuel);
-        selectedFuel = btn.dataset.fuel;
+        selectedFuel = nextFuel;
         writeSelectedFuel(selectedFuel);
         syncFuelToggle();
         loadEnergyDiscountFor(selectedFuel);
         refreshUi();
+        trackEvent("select_grade", { grade: fuelLabel(selectedFuel) });
       });
 
       couponGrid.addEventListener("click", (event) => {
         const btn = event.target.closest("button[data-count]");
         if (!btn) return;
+        const nextCount = Number(btn.dataset.count);
+        if (nextCount === selectedCoupons) return;
         writeSelectedCoupons(btn.dataset.count);
         syncCouponGrid();
         renderCalculation();
+        trackEvent("select_coupons", { count: selectedCoupons });
       });
 
       energyDiscountEl.addEventListener("input", () => {
@@ -2116,6 +2180,7 @@
       syncCouponGrid();
       loadEnergyDiscountFor(selectedFuel);
       syncChartMetricToggle();
+      setupPwaInstallTracking();
       registerServiceWorker();
       loadAppVersion().finally(syncPageScrollLock);
       loadPrices();
