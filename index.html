@@ -1100,8 +1100,9 @@
       const HISTORY_URL = "data/price-history.json";
       const VERSION_URL = "version.json";
       /** Must match version.json at deploy time — detects stale HTML shells. */
-      const APP_BUILD_VERSION = "1.1.2";
+      const APP_BUILD_VERSION = "1.1.3";
       const FORCE_RELOAD_KEY = "pwa_force_reload";
+      const CACHE_MIGRATE_KEY = "pwa_cache_migrate_1_1_3";
       const CACHE_KEY = "price_cache";
       const CACHE_TIME_KEY = "price_cache_time";
       const HISTORY_CACHE_KEY = "price_history_cache";
@@ -1771,9 +1772,44 @@
             if (reg.waiting) {
               reg.waiting.postMessage({ type: "SKIP_WAITING" });
             }
+            if (reg.active) {
+              reg.active.postMessage({ type: "CLEAR_CACHES" });
+            }
             await reg.unregister();
           }),
         );
+      }
+
+      /** One-shot wipe of legacy petrol-calc-* caches that poisoned iOS PWAs. */
+      async function migrateLegacyCaches() {
+        try {
+          if (localStorage.getItem(CACHE_MIGRATE_KEY) === "1") return false;
+          localStorage.setItem(CACHE_MIGRATE_KEY, "1");
+        } catch {
+          /* continue wipe even if storage is unavailable */
+        }
+
+        try {
+          await clearAppCaches();
+          if ("serviceWorker" in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(
+              regs.map(async (reg) => {
+                reg.active?.postMessage({ type: "CLEAR_CACHES" });
+                reg.waiting?.postMessage({ type: "SKIP_WAITING" });
+                await reg.unregister();
+              }),
+            );
+          }
+        } catch {
+          /* still reload */
+        }
+
+        const url = new URL(location.href);
+        url.searchParams.set("v", normalizeSemver(APP_BUILD_VERSION));
+        url.searchParams.set("_", String(Date.now()));
+        location.replace(url.toString());
+        return true;
       }
 
       /** Stale HTML can show a fresh version.json; wipe caches and hard-reload once. */
@@ -2140,6 +2176,7 @@
       function registerServiceWorker() {
         if (!("serviceWorker" in navigator)) return;
 
+        // Bust the SW script URL whenever the build changes (iOS is aggressive about SW caching).
         const swUrl = `sw.js?v=${encodeURIComponent(normalizeSemver(APP_BUILD_VERSION))}`;
 
         navigator.serviceWorker
@@ -2152,6 +2189,7 @@
               if (document.visibilityState === "visible") checkUpdate();
             });
 
+            // Always activate waiting workers immediately — no manual tap required.
             if (registration.waiting) {
               registration.waiting.postMessage({ type: "SKIP_WAITING" });
             }
@@ -2161,11 +2199,7 @@
               if (!worker) return;
               worker.addEventListener("statechange", () => {
                 if (worker.state !== "installed") return;
-                // Auto-activate so iOS PWAs do not stay on a waiting worker.
                 worker.postMessage({ type: "SKIP_WAITING" });
-                if (navigator.serviceWorker.controller) {
-                  showUpdateBanner(worker);
-                }
               });
             });
           })
@@ -2267,9 +2301,13 @@
       loadEnergyDiscountFor(selectedFuel);
       syncChartMetricToggle();
       setupPwaInstallTracking();
-      registerServiceWorker();
-      loadAppVersion().finally(syncPageScrollLock);
-      loadPrices();
+      migrateLegacyCaches().then((reloading) => {
+        if (reloading) return;
+        registerServiceWorker();
+        loadAppVersion().finally(syncPageScrollLock);
+        loadPrices();
+        syncPageScrollLock();
+      });
       syncPageScrollLock();
     </script>
   </body>
