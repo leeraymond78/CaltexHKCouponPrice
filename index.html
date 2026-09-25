@@ -157,6 +157,22 @@
         color: var(--coral);
       }
 
+      .app-footer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+        margin-top: 0.15rem;
+      }
+
+      .app-version {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.35);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+      }
+
       .offline-pill {
         display: none;
         position: absolute;
@@ -997,9 +1013,12 @@
         </div>
       </section>
 
-      <p class="updated" id="updated" data-state="loading" aria-live="polite">
-        Getting latest prices online…
-      </p>
+      <footer class="app-footer">
+        <p class="updated" id="updated" data-state="loading" aria-live="polite">
+          Getting latest prices online…
+        </p>
+        <p class="app-version" id="appVersion" hidden></p>
+      </footer>
     </div>
 
     <div class="sheet-backdrop" id="chartBackdrop" hidden>
@@ -1054,12 +1073,15 @@
     <script>
       const PRICE_URL = "data/oilprice.json";
       const HISTORY_URL = "data/price-history.json";
+      const VERSION_URL = "version.json";
       const CACHE_KEY = "price_cache";
       const CACHE_TIME_KEY = "price_cache_time";
       const HISTORY_CACHE_KEY = "price_history_cache";
       const CHART_METRIC_KEY = "chart_metric";
       const SELECTED_FUEL_KEY = "selected_fuel";
+      const SELECTED_COUPONS_KEY = "selected_coupons";
       const CHART_CHANGES = 7;
+      const COUPON_COUNTS = [1, 2, 3, 4, 5];
       const ENERGY_KEYS = {
         "Standard Petrol": "starcard_discount_gold",
         "Premium Petrol": "starcard_discount_platinum",
@@ -1094,6 +1116,7 @@
       const realPriceEl = document.getElementById("realPrice");
       const litresEl = document.getElementById("litres");
       const youSaveEl = document.getElementById("youSave");
+      const appVersionEl = document.getElementById("appVersion");
       const priceChangeBtn = document.getElementById("priceChangeBtn");
       const priceChangeIcon = document.getElementById("priceChangeIcon");
       const priceChangeFrom = document.getElementById("priceChangeFrom");
@@ -1116,7 +1139,7 @@
         "Premium Petrol": [],
       };
       let selectedFuel = readSelectedFuel();
-      let selectedCoupons = 2;
+      let selectedCoupons = readSelectedCoupons();
       let boardPrice = NaN;
       let manualBoardMode = false;
       let waitingWorker = null;
@@ -1308,6 +1331,34 @@
           el.setAttribute(
             "aria-pressed",
             String(el.dataset.fuel === selectedFuel),
+          );
+        });
+      }
+
+      function readSelectedCoupons() {
+        try {
+          const saved = Number(localStorage.getItem(SELECTED_COUPONS_KEY));
+          return COUPON_COUNTS.includes(saved) ? saved : 2;
+        } catch {
+          return 2;
+        }
+      }
+
+      function writeSelectedCoupons(count) {
+        const next = Number(count);
+        selectedCoupons = COUPON_COUNTS.includes(next) ? next : 2;
+        try {
+          localStorage.setItem(SELECTED_COUPONS_KEY, String(selectedCoupons));
+        } catch {
+          /* ignore quota / private mode */
+        }
+      }
+
+      function syncCouponGrid() {
+        couponGrid.querySelectorAll("button[data-count]").forEach((el) => {
+          el.setAttribute(
+            "aria-pressed",
+            String(Number(el.dataset.count) === selectedCoupons),
           );
         });
       }
@@ -1602,6 +1653,20 @@
 
       function updateOnlineUi() {
         offlinePill.classList.toggle("is-visible", !navigator.onLine);
+      }
+
+      async function loadAppVersion() {
+        try {
+          const response = await fetch(VERSION_URL, { cache: "no-store" });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const data = await response.json();
+          const version = String(data?.version ?? "").trim();
+          if (!version) throw new Error("missing version");
+          appVersionEl.textContent = `v${version.replace(/^v/i, "")}`;
+          appVersionEl.hidden = false;
+        } catch {
+          appVersionEl.hidden = true;
+        }
       }
 
       function defaultEnergyFor(fuel = selectedFuel) {
@@ -1970,13 +2035,8 @@
       couponGrid.addEventListener("click", (event) => {
         const btn = event.target.closest("button[data-count]");
         if (!btn) return;
-        selectedCoupons = Number(btn.dataset.count);
-        couponGrid.querySelectorAll("button").forEach((el) => {
-          el.setAttribute(
-            "aria-pressed",
-            String(Number(el.dataset.count) === selectedCoupons),
-          );
-        });
+        writeSelectedCoupons(btn.dataset.count);
+        syncCouponGrid();
         renderCalculation();
       });
 
@@ -2006,9 +2066,11 @@
 
       updateOnlineUi();
       syncFuelToggle();
+      syncCouponGrid();
       loadEnergyDiscountFor(selectedFuel);
       syncChartMetricToggle();
       registerServiceWorker();
+      loadAppVersion();
       loadPrices();
     </script>
   </body>

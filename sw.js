@@ -1,5 +1,4 @@
-const CACHE_NAME = "petrol-calc-v3";
-const PRICE_CACHE = "petrol-calc-price-v3";
+const VERSION_URL = "./version.json";
 const PRICE_URL = "./data/oilprice.json";
 const PRICE_TTL_MS = 6 * 60 * 60 * 1000;
 
@@ -7,6 +6,7 @@ const STATIC_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
+  "./version.json",
   "./data/oilprice.json",
   "./data/price-history.json",
   "./icons/icon-192.png",
@@ -16,24 +16,76 @@ const STATIC_ASSETS = [
   "./icons/favicon-48.png",
 ];
 
+/** @type {string | null} */
+let activeVersion = null;
+
+function normalizeVersion(value) {
+  const version = String(value ?? "")
+    .trim()
+    .replace(/^v/i, "");
+  return version || "0";
+}
+
+function shellCacheName(version) {
+  return `petrol-calc-${version}`;
+}
+
+function priceCacheName(version) {
+  return `petrol-calc-price-${version}`;
+}
+
+async function fetchAppVersion() {
+  const response = await fetch(VERSION_URL, { cache: "no-store" });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const data = await response.json();
+  return normalizeVersion(data.version);
+}
+
+async function resolveVersion() {
+  try {
+    activeVersion = await fetchAppVersion();
+  } catch {
+    if (!activeVersion) {
+      const keys = await caches.keys();
+      const match = keys
+        .map((key) => key.match(/^petrol-calc-(\d+\.\d+\.\d+)$/))
+        .find(Boolean);
+      activeVersion = match ? match[1] : "0";
+    }
+  }
+  return activeVersion;
+}
+
+async function pruneOtherCaches(version) {
+  const keep = new Set([shellCacheName(version), priceCacheName(version)]);
+  const keys = await caches.keys();
+  await Promise.all(
+    keys.filter((key) => !keep.has(key)).map((key) => caches.delete(key)),
+  );
+}
+
+async function precacheShell(version) {
+  const cache = await caches.open(shellCacheName(version));
+  await cache.addAll(STATIC_ASSETS);
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)),
+    (async () => {
+      const version = await resolveVersion();
+      await precacheShell(version);
+    })(),
   );
   // Do not skipWaiting here — the page shows an update banner first.
 });
 
 self.addEventListener("activate", (event) => {
-  const keep = new Set([CACHE_NAME, PRICE_CACHE]);
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(
-          keys.filter((key) => !keep.has(key)).map((key) => caches.delete(key)),
-        ),
-      )
-      .then(() => self.clients.claim()),
+    (async () => {
+      const version = await resolveVersion();
+      await pruneOtherCaches(version);
+      await self.clients.claim();
+    })(),
   );
 });
 
@@ -50,21 +102,36 @@ function isPriceRequest(request) {
   }
 }
 
-function isSameOrigin(request) {
-  return new URL(request.url).origin === self.location.origin;
+function isVersionRequest(request) {
+  try {
+    const url = new URL(request.url);
+    return (
+      url.origin === self.location.origin &&
+      url.pathname.endsWith("/version.json")
+    );
+  } catch {
+    return false;
+  }
 }
 
-/** Cache-first for static app shell. */
-async function cacheFirst(request) {
-  const cached = await caches.match(request, { ignoreSearch: true });
-  if (cached) return cached;
-
-  const response = await fetch(request);
-  if (response && response.ok) {
-    const cache = await caches.open(CACHE_NAME);
-    cache.put(request, response.clone());
+function isShellDocumentRequest(request) {
+  if (request.mode === "navigate") return true;
+  try {
+    const url = new URL(request.url);
+    if (url.origin !== self.location.origin) return false;
+    const path = url.pathname;
+    return (
+      path.endsWith("/") ||
+      path.endsWith("/index.html") ||
+      /\/index\.html$/i.test(path)
+    );
+  } catch {
+    return false;
   }
-  return response;
+}
+
+function isSameOrigin(request) {
+  return new URL(request.url).origin === self.location.origin;
 }
 
 function cacheAgeMs(response) {
@@ -73,8 +140,8 @@ function cacheAgeMs(response) {
   return Date.now() - stamped;
 }
 
-async function putPriceCache(request, response) {
-  const cache = await caches.open(PRICE_CACHE);
+async function putPriceCache(request, response, version) {
+  const cache = await caches.open(priceCacheName(version));
   const headers = new Headers(response.headers);
   headers.set("x-sw-cached-at", String(Date.now()));
   headers.set("x-sw-cache-ttl", String(PRICE_TTL_MS));
@@ -89,16 +156,84 @@ async function putPriceCache(request, response) {
   );
 }
 
-/**
- * Network-first for bundled oilprice.json (updated by GitHub Actions).
- * Falls back to SW cache when offline.
- */
-async function networkFirstPrice(request) {
-  const cache = await caches.open(PRICE_CACHE);
+/** Network-first for HTML shell so version bumps apply without editing this file. */
+async function networkFirstDocument(request) {
+  const version = await resolveVersion();
+  const cache = await caches.open(shellCacheName(version));
   try {
     const response = await fetch(request, { cache: "no-store" });
     if (response && response.ok) {
-      await putPriceCache(request, response);
+      cache.put(request, response.clone());
+      return response;
+    }
+    throw new Error("Bad network response");
+  } catch (err) {
+    const cached =
+      (await cache.match(request, { ignoreSearch: true })) ||
+      (await caches.match(request, { ignoreSearch: true }));
+    if (cached) return cached;
+    return new Response("Offline", {
+      status: 504,
+      headers: { "Content-Type": "text/plain" },
+    });
+  }
+}
+
+/** Network-first for version.json; switches cache names when the version changes. */
+async function networkFirstVersion(request) {
+  try {
+    const response = await fetch(request, { cache: "no-store" });
+    if (response && response.ok) {
+      const data = await response.clone().json();
+      const version = normalizeVersion(data.version);
+      if (version !== activeVersion) {
+        activeVersion = version;
+        await pruneOtherCaches(version);
+        await precacheShell(version).catch(() => {});
+      }
+      const cache = await caches.open(shellCacheName(version));
+      cache.put(request, response.clone());
+      return response;
+    }
+    throw new Error("Bad network response");
+  } catch (err) {
+    const version = activeVersion || (await resolveVersion());
+    const cached =
+      (await caches.open(shellCacheName(version)).then((c) => c.match(request))) ||
+      (await caches.match(VERSION_URL, { ignoreSearch: true }));
+    if (cached) return cached;
+    return new Response(JSON.stringify({ error: String(err && err.message) }), {
+      status: 504,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}
+
+/** Cache-first for other static assets. */
+async function cacheFirst(request) {
+  const version = activeVersion || (await resolveVersion());
+  const cache = await caches.open(shellCacheName(version));
+  const cached = await cache.match(request, { ignoreSearch: true });
+  if (cached) return cached;
+
+  const response = await fetch(request);
+  if (response && response.ok) {
+    cache.put(request, response.clone());
+  }
+  return response;
+}
+
+/**
+ * Network-first for oilprice / price-history (updated by GitHub Actions).
+ * Falls back to SW cache when offline.
+ */
+async function networkFirstPrice(request) {
+  const version = activeVersion || (await resolveVersion());
+  const cache = await caches.open(priceCacheName(version));
+  try {
+    const response = await fetch(request, { cache: "no-store" });
+    if (response && response.ok) {
+      await putPriceCache(request, response, version);
       return response;
     }
     throw new Error("Bad network response");
@@ -129,8 +264,18 @@ async function networkFirstPrice(request) {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
+  if (isVersionRequest(event.request)) {
+    event.respondWith(networkFirstVersion(event.request));
+    return;
+  }
+
   if (isPriceRequest(event.request)) {
     event.respondWith(networkFirstPrice(event.request));
+    return;
+  }
+
+  if (isShellDocumentRequest(event.request)) {
+    event.respondWith(networkFirstDocument(event.request));
     return;
   }
 
