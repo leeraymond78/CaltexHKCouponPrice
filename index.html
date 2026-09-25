@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
-      content="black"
+      content="default"
     />
     <meta
       name="description"
@@ -44,10 +44,15 @@
         box-sizing: border-box;
       }
 
+      html {
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+
       html,
       body {
         margin: 0;
-        min-height: 100%;
         background: var(--bg);
         color: var(--text);
         font-family: var(--font);
@@ -55,9 +60,24 @@
       }
 
       body {
+        min-height: 100%;
+        min-height: 100dvh;
         padding: calc(0.7rem + env(safe-area-inset-top, 0px)) 1rem
           calc(0.75rem + env(safe-area-inset-bottom, 0px));
         background: var(--bg);
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+
+      body.is-scrollable:not(.sheet-open) {
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      body.sheet-open {
+        overflow: hidden;
+        overscroll-behavior: none;
       }
 
       /* Opaque top fill so iOS status-bar area never frosts the title */
@@ -841,7 +861,7 @@
     </style>
   </head>
   <body>
-    <div class="app">
+    <div class="app" id="app">
       <button type="button" class="update-banner" id="updateBanner" hidden>
         Update available — tap to refresh
       </button>
@@ -1100,6 +1120,7 @@
       const REBATE_PER_COUPON = 50;
 
       const updatedEl = document.getElementById("updated");
+      const appEl = document.getElementById("app");
       const offlinePill = document.getElementById("offlinePill");
       const priceWarning = document.getElementById("priceWarning");
       const updateBanner = document.getElementById("updateBanner");
@@ -1612,7 +1633,7 @@
         chartBackdrop.hidden = false;
         chartBackdrop.classList.add("is-open");
         priceChangeBtn.setAttribute("aria-expanded", "true");
-        document.body.style.overflow = "hidden";
+        document.body.classList.add("sheet-open");
         chartClose.focus();
       }
 
@@ -1622,7 +1643,8 @@
         chartBackdrop.classList.remove("is-open");
         chartBackdrop.hidden = true;
         priceChangeBtn.setAttribute("aria-expanded", "false");
-        document.body.style.overflow = "";
+        document.body.classList.remove("sheet-open");
+        syncPageScrollLock();
         if (lastFocus && typeof lastFocus.focus === "function") {
           lastFocus.focus();
         }
@@ -1653,6 +1675,23 @@
 
       function updateOnlineUi() {
         offlinePill.classList.toggle("is-visible", !navigator.onLine);
+      }
+
+      function syncPageScrollLock() {
+        if (!appEl || chartOpen) {
+          document.body.classList.remove("is-scrollable");
+          return;
+        }
+        const styles = getComputedStyle(document.body);
+        const padY =
+          (parseFloat(styles.paddingTop) || 0) +
+          (parseFloat(styles.paddingBottom) || 0);
+        const contentHeight = appEl.getBoundingClientRect().height + padY;
+        const needsScroll = contentHeight > window.innerHeight + 1;
+        document.body.classList.toggle("is-scrollable", needsScroll);
+        if (!needsScroll && window.scrollY !== 0) {
+          window.scrollTo(0, 0);
+        }
       }
 
       async function loadAppVersion() {
@@ -1885,6 +1924,7 @@
         syncBoardPriceFromSelection();
         renderPriceChange();
         renderCalculation();
+        syncPageScrollLock();
       }
 
       function applyPrices(nextPrices, time, state, message) {
@@ -2060,6 +2100,13 @@
         loadPrices();
       });
       window.addEventListener("offline", updateOnlineUi);
+      window.addEventListener("resize", syncPageScrollLock);
+      window.addEventListener("orientationchange", () => {
+        window.setTimeout(syncPageScrollLock, 100);
+      });
+      if (typeof ResizeObserver === "function") {
+        new ResizeObserver(syncPageScrollLock).observe(appEl);
+      }
 
       window.calculate = calculate;
       window.getPrices = () => prices;
@@ -2070,8 +2117,9 @@
       loadEnergyDiscountFor(selectedFuel);
       syncChartMetricToggle();
       registerServiceWorker();
-      loadAppVersion();
+      loadAppVersion().finally(syncPageScrollLock);
       loadPrices();
+      syncPageScrollLock();
     </script>
   </body>
 </html>
