@@ -74,9 +74,10 @@ self.addEventListener("install", (event) => {
     (async () => {
       const version = await resolveVersion();
       await precacheShell(version);
+      // Activate immediately so iOS PWAs do not keep serving a waiting worker.
+      await self.skipWaiting();
     })(),
   );
-  // Do not skipWaiting here — the page shows an update banner first.
 });
 
 self.addEventListener("activate", (event) => {

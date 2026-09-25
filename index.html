@@ -1099,6 +1099,9 @@
       const PRICE_URL = "data/oilprice.json";
       const HISTORY_URL = "data/price-history.json";
       const VERSION_URL = "version.json";
+      /** Must match version.json at deploy time — detects stale HTML shells. */
+      const APP_BUILD_VERSION = "1.1.2";
+      const FORCE_RELOAD_KEY = "pwa_force_reload";
       const CACHE_KEY = "price_cache";
       const CACHE_TIME_KEY = "price_cache_time";
       const HISTORY_CACHE_KEY = "price_history_cache";
@@ -1743,17 +1746,90 @@
         }
       }
 
+      function normalizeSemver(value) {
+        return String(value ?? "")
+          .trim()
+          .replace(/^v/i, "");
+      }
+
+      function showBuildVersion() {
+        appVersionEl.textContent = `v${normalizeSemver(APP_BUILD_VERSION)}`;
+        appVersionEl.hidden = false;
+      }
+
+      async function clearAppCaches() {
+        if (!("caches" in window)) return;
+        const keys = await caches.keys();
+        await Promise.all(keys.map((key) => caches.delete(key)));
+      }
+
+      async function unregisterServiceWorkers() {
+        if (!("serviceWorker" in navigator)) return;
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(
+          regs.map(async (reg) => {
+            if (reg.waiting) {
+              reg.waiting.postMessage({ type: "SKIP_WAITING" });
+            }
+            await reg.unregister();
+          }),
+        );
+      }
+
+      /** Stale HTML can show a fresh version.json; wipe caches and hard-reload once. */
+      async function forceFreshApp(remoteVersion) {
+        const token = `v${remoteVersion}`;
+        if (sessionStorage.getItem(FORCE_RELOAD_KEY) === token) {
+          return false;
+        }
+        sessionStorage.setItem(FORCE_RELOAD_KEY, token);
+
+        try {
+          await clearAppCaches();
+          await unregisterServiceWorkers();
+        } catch {
+          /* still attempt reload */
+        }
+
+        const url = new URL(location.href);
+        url.searchParams.set("v", remoteVersion);
+        url.searchParams.set("_", String(Date.now()));
+        location.replace(url.toString());
+        return true;
+      }
+
+      function scrubCacheBustParams() {
+        const url = new URL(location.href);
+        if (!url.searchParams.has("v") && !url.searchParams.has("_")) return;
+        url.searchParams.delete("v");
+        url.searchParams.delete("_");
+        const clean =
+          url.pathname +
+          (url.searchParams.toString() ? `?${url.searchParams}` : "") +
+          url.hash;
+        history.replaceState(null, "", clean);
+      }
+
       async function loadAppVersion() {
+        showBuildVersion();
+        const build = normalizeSemver(APP_BUILD_VERSION);
+
         try {
           const response = await fetch(VERSION_URL, { cache: "no-store" });
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           const data = await response.json();
-          const version = String(data?.version ?? "").trim();
-          if (!version) throw new Error("missing version");
-          appVersionEl.textContent = `v${version.replace(/^v/i, "")}`;
-          appVersionEl.hidden = false;
+          const remote = normalizeSemver(data?.version);
+          if (!remote) throw new Error("missing version");
+
+          if (remote !== build) {
+            const reloading = await forceFreshApp(remote);
+            if (reloading) return;
+          } else {
+            sessionStorage.removeItem(FORCE_RELOAD_KEY);
+            scrubCacheBustParams();
+          }
         } catch {
-          appVersionEl.hidden = true;
+          /* keep showing embedded build version */
         }
       }
 
@@ -2064,21 +2140,31 @@
       function registerServiceWorker() {
         if (!("serviceWorker" in navigator)) return;
 
+        const swUrl = `sw.js?v=${encodeURIComponent(normalizeSemver(APP_BUILD_VERSION))}`;
+
         navigator.serviceWorker
-          .register("sw.js")
+          .register(swUrl)
           .then((registration) => {
-            registration.update().catch(() => {});
-            if (registration.waiting) showUpdateBanner(registration.waiting);
+            const checkUpdate = () => registration.update().catch(() => {});
+            checkUpdate();
+
+            document.addEventListener("visibilitychange", () => {
+              if (document.visibilityState === "visible") checkUpdate();
+            });
+
+            if (registration.waiting) {
+              registration.waiting.postMessage({ type: "SKIP_WAITING" });
+            }
 
             registration.addEventListener("updatefound", () => {
               const worker = registration.installing;
               if (!worker) return;
               worker.addEventListener("statechange", () => {
                 if (worker.state !== "installed") return;
+                // Auto-activate so iOS PWAs do not stay on a waiting worker.
+                worker.postMessage({ type: "SKIP_WAITING" });
                 if (navigator.serviceWorker.controller) {
                   showUpdateBanner(worker);
-                } else {
-                  worker.postMessage({ type: "SKIP_WAITING" });
                 }
               });
             });
