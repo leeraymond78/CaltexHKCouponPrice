@@ -22,11 +22,6 @@
     <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192" />
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
     <title>Caltex HK StarCard Discount</title>
-    <script
-      defer
-      src="https://cloud.umami.is/script.js"
-      data-website-id="f6b9a90c-dd74-4889-bad6-9b712a85d3f5"
-    ></script>
     <style>
       :root {
         --bg: #0d0d0d;
@@ -1100,9 +1095,9 @@
       const HISTORY_URL = "data/price-history.json";
       const VERSION_URL = "version.json";
       /** Must match version.json at deploy time — detects stale HTML shells. */
-      const APP_BUILD_VERSION = "1.1.4";
+      const APP_BUILD_VERSION = "1.1.5";
       const FORCE_RELOAD_KEY = "pwa_force_reload";
-      const CACHE_MIGRATE_KEY = "pwa_cache_migrate_1_1_4";
+      const CACHE_MIGRATE_KEY = "pwa_cache_migrate_1_1_5";
       const DEFAULTS_URL = "defaults.json";
       const CACHE_KEY = "price_cache";
       const CACHE_TIME_KEY = "price_cache_time";
@@ -1130,18 +1125,11 @@
       const COUPON_VALUE = 300;
       const REBATE_PER_COUPON = 50;
       const PWA_INSTALL_TRACKED_KEY = "pwa_install_tracked";
+      const UMAMI_READY_TIMEOUT_MS = 10000;
 
-      function trackEvent(name, data) {
-        try {
-          if (typeof umami === "undefined" || typeof umami.track !== "function") {
-            return;
-          }
-          if (data == null) umami.track(name);
-          else umami.track(name, data);
-        } catch {
-          /* analytics must never break the app */
-        }
-      }
+      /** @type {Array<(api: { track: Function }) => void>} */
+      const umamiQueue = [];
+      let umamiReadyTimer = 0;
 
       function isRunningAsPwa() {
         return (
@@ -1149,6 +1137,61 @@
           window.matchMedia("(display-mode: fullscreen)").matches ||
           window.navigator.standalone === true
         );
+      }
+
+      function flushUmamiQueue() {
+        if (typeof umami === "undefined" || typeof umami.track !== "function") {
+          return false;
+        }
+        while (umamiQueue.length) {
+          const job = umamiQueue.shift();
+          try {
+            job(umami);
+          } catch {
+            /* analytics must never break the app */
+          }
+        }
+        return true;
+      }
+
+      function whenUmamiReady(job) {
+        umamiQueue.push(job);
+        if (flushUmamiQueue()) return;
+
+        if (umamiReadyTimer) return;
+        const started = Date.now();
+        umamiReadyTimer = window.setInterval(() => {
+          if (flushUmamiQueue() || Date.now() - started > UMAMI_READY_TIMEOUT_MS) {
+            window.clearInterval(umamiReadyTimer);
+            umamiReadyTimer = 0;
+          }
+        }, 100);
+      }
+
+      function trackEvent(name, data) {
+        whenUmamiReady((api) => {
+          if (data == null) api.track(name);
+          else api.track(name, data);
+        });
+      }
+
+      /** Pageviews: auto-track can miss PWA standalone opens; send explicitly once ready. */
+      function trackPageView() {
+        whenUmamiReady((api) => {
+          api.track((props) => {
+            if (!isRunningAsPwa()) return props;
+            try {
+              const parsed = new URL(props.url, location.href);
+              parsed.searchParams.set("utm_medium", "pwa");
+              return {
+                ...props,
+                url: parsed.pathname + parsed.search + parsed.hash,
+              };
+            } catch {
+              return props;
+            }
+          });
+        });
       }
 
       function trackPwaInstall(source) {
@@ -2318,18 +2361,28 @@
       syncCouponGrid();
       syncChartMetricToggle();
       setupPwaInstallTracking();
+      trackPageView();
       loadDefaults().then(() => {
         loadEnergyDiscountFor(selectedFuel);
         syncPageScrollLock();
       });
-      migrateLegacyCaches().then((reloading) => {
-        if (reloading) return;
-        registerServiceWorker();
-        loadAppVersion().finally(syncPageScrollLock);
-        loadPrices();
-        syncPageScrollLock();
-      });
+      // Let the pageview beacon start before any cache-migrate hard reload.
+      window.setTimeout(() => {
+        migrateLegacyCaches().then((reloading) => {
+          if (reloading) return;
+          registerServiceWorker();
+          loadAppVersion().finally(syncPageScrollLock);
+          loadPrices();
+          syncPageScrollLock();
+        });
+      }, 400);
       syncPageScrollLock();
     </script>
+    <script
+      defer
+      src="https://cloud.umami.is/script.js"
+      data-website-id="f6b9a90c-dd74-4889-bad6-9b712a85d3f5"
+      data-auto-track="false"
+    ></script>
   </body>
 </html>
