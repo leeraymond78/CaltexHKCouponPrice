@@ -1100,9 +1100,10 @@
       const HISTORY_URL = "data/price-history.json";
       const VERSION_URL = "version.json";
       /** Must match version.json at deploy time — detects stale HTML shells. */
-      const APP_BUILD_VERSION = "1.1.3";
+      const APP_BUILD_VERSION = "1.1.4";
       const FORCE_RELOAD_KEY = "pwa_force_reload";
-      const CACHE_MIGRATE_KEY = "pwa_cache_migrate_1_1_3";
+      const CACHE_MIGRATE_KEY = "pwa_cache_migrate_1_1_4";
+      const DEFAULTS_URL = "defaults.json";
       const CACHE_KEY = "price_cache";
       const CACHE_TIME_KEY = "price_cache_time";
       const HISTORY_CACHE_KEY = "price_history_cache";
@@ -1119,7 +1120,8 @@
         "Standard Petrol": "energy_discount_regular",
         "Premium Petrol": "energy_discount_premium",
       };
-      const DEFAULT_ENERGY = {
+      /** Fallback until defaults.json loads; Gold = 11, Platinum = 12. */
+      let DEFAULT_ENERGY = {
         "Standard Petrol": 11,
         "Premium Petrol": 12,
       };
@@ -1780,7 +1782,7 @@
         );
       }
 
-      /** One-shot wipe of legacy petrol-calc-* caches that poisoned iOS PWAs. */
+      /** One-shot wipe of legacy versioned SW caches. */
       async function migrateLegacyCaches() {
         try {
           if (localStorage.getItem(CACHE_MIGRATE_KEY) === "1") return false;
@@ -1870,7 +1872,23 @@
       }
 
       function defaultEnergyFor(fuel = selectedFuel) {
-        return DEFAULT_ENERGY[fuel] ?? 11;
+        return DEFAULT_ENERGY[fuel] ?? DEFAULT_ENERGY["Standard Petrol"] ?? 11;
+      }
+
+      async function loadDefaults() {
+        try {
+          const response = await fetch(DEFAULTS_URL, { cache: "no-store" });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const data = await response.json();
+          const gold = Number(data?.starCardDiscount?.gold);
+          const platinum = Number(data?.starCardDiscount?.platinum);
+          const next = { ...DEFAULT_ENERGY };
+          if (Number.isFinite(gold)) next["Standard Petrol"] = round2(gold);
+          if (Number.isFinite(platinum)) next["Premium Petrol"] = round2(platinum);
+          DEFAULT_ENERGY = next;
+        } catch {
+          /* keep built-in Gold 11 / Platinum 12 fallbacks */
+        }
       }
 
       function inStarCardRange(value) {
@@ -2298,9 +2316,12 @@
       updateOnlineUi();
       syncFuelToggle();
       syncCouponGrid();
-      loadEnergyDiscountFor(selectedFuel);
       syncChartMetricToggle();
       setupPwaInstallTracking();
+      loadDefaults().then(() => {
+        loadEnergyDiscountFor(selectedFuel);
+        syncPageScrollLock();
+      });
       migrateLegacyCaches().then((reloading) => {
         if (reloading) return;
         registerServiceWorker();

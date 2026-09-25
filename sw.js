@@ -1,13 +1,13 @@
+const CACHE_NAME = "petrol-calc-v1";
+const PRICE_CACHE = "petrol-calc-price-v1";
 const VERSION_URL = "./version.json";
 const PRICE_URL = "./data/oilprice.json";
 const PRICE_TTL_MS = 6 * 60 * 60 * 1000;
 
-/** Cache prefix bump abandons any poisoned petrol-calc-* shells from earlier builds. */
-const CACHE_PREFIX = "starcard-";
-
 /** Offline fallback only — never precache HTML (avoids old SW poisoning install). */
 const STATIC_ASSETS = [
   "./manifest.json",
+  "./defaults.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/apple-touch-icon.png",
@@ -15,44 +15,12 @@ const STATIC_ASSETS = [
   "./icons/favicon-48.png",
 ];
 
-/** @type {string | null} */
-let activeVersion = null;
-
-function normalizeVersion(value) {
-  const version = String(value ?? "")
-    .trim()
-    .replace(/^v/i, "");
-  return version || "0";
-}
-
-function shellCacheName(version) {
-  return `${CACHE_PREFIX}shell-${version}`;
-}
-
-function priceCacheName(version) {
-  return `${CACHE_PREFIX}price-${version}`;
-}
-
-async function fetchAppVersion() {
-  const response = await fetch(VERSION_URL, { cache: "no-store" });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  const data = await response.json();
-  return normalizeVersion(data.version);
-}
-
-async function resolveVersion() {
-  try {
-    activeVersion = await fetchAppVersion();
-  } catch {
-    if (!activeVersion) {
-      const keys = await caches.keys();
-      const match = keys
-        .map((key) => key.match(new RegExp(`^${CACHE_PREFIX}shell-(\\d+\\.\\d+\\.\\d+)$`)))
-        .find(Boolean);
-      activeVersion = match ? match[1] : "0";
-    }
-  }
-  return activeVersion;
+async function deleteOtherCaches() {
+  const keep = new Set([CACHE_NAME, PRICE_CACHE]);
+  const keys = await caches.keys();
+  await Promise.all(
+    keys.filter((key) => !keep.has(key)).map((key) => caches.delete(key)),
+  );
 }
 
 async function deleteAllCaches() {
@@ -60,16 +28,8 @@ async function deleteAllCaches() {
   await Promise.all(keys.map((key) => caches.delete(key)));
 }
 
-async function pruneOtherCaches(version) {
-  const keep = new Set([shellCacheName(version), priceCacheName(version)]);
-  const keys = await caches.keys();
-  await Promise.all(
-    keys.filter((key) => !keep.has(key)).map((key) => caches.delete(key)),
-  );
-}
-
-async function precacheAssets(version) {
-  const cache = await caches.open(shellCacheName(version));
+async function precacheAssets() {
+  const cache = await caches.open(CACHE_NAME);
   await Promise.all(
     STATIC_ASSETS.map(async (path) => {
       try {
@@ -93,18 +53,16 @@ function networkFetch(request) {
 }
 
 self.addEventListener("install", (event) => {
-  // Activate ASAP. Do not precache here — addAll can be intercepted by the
-  // old controlling worker and poison the new version cache with stale HTML.
+  // Activate ASAP. Do not precache HTML here — addAll can be intercepted by the
+  // old controlling worker and poison the cache with a stale shell.
   event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
-      // Drop every Cache Storage entry (including legacy petrol-calc-*).
-      await deleteAllCaches();
-      const version = await resolveVersion();
-      await precacheAssets(version);
+      await deleteOtherCaches();
+      await precacheAssets();
       await self.clients.claim();
     })(),
   );
@@ -161,8 +119,8 @@ function cacheAgeMs(response) {
   return Date.now() - stamped;
 }
 
-async function putPriceCache(request, response, version) {
-  const cache = await caches.open(priceCacheName(version));
+async function putPriceCache(request, response) {
+  const cache = await caches.open(PRICE_CACHE);
   const headers = new Headers(response.headers);
   headers.set("x-sw-cached-at", String(Date.now()));
   headers.set("x-sw-cache-ttl", String(PRICE_TTL_MS));
@@ -177,10 +135,9 @@ async function putPriceCache(request, response, version) {
   );
 }
 
-/** Always prefer network for HTML; never search across unrelated caches. */
+/** Always prefer network for HTML. */
 async function networkFirstDocument(request) {
-  const version = activeVersion || (await resolveVersion());
-  const cache = await caches.open(shellCacheName(version));
+  const cache = await caches.open(CACHE_NAME);
   const storeUrl = new URL(request.url);
   storeUrl.search = "";
   const storeKey = storeUrl.href;
@@ -206,26 +163,16 @@ async function networkFirstDocument(request) {
 }
 
 async function networkFirstVersion(request) {
+  const cache = await caches.open(CACHE_NAME);
   try {
     const response = await networkFetch(request);
     if (response && response.ok) {
-      const data = await response.clone().json();
-      const version = normalizeVersion(data.version);
-      if (version !== activeVersion) {
-        activeVersion = version;
-        await pruneOtherCaches(version);
-        await precacheAssets(version).catch(() => {});
-      }
-      const cache = await caches.open(shellCacheName(version));
       cache.put(VERSION_URL, response.clone()).catch(() => {});
       return response;
     }
     throw new Error("Bad network response");
   } catch (err) {
-    const version = activeVersion || (await resolveVersion());
-    const cached = await caches
-      .open(shellCacheName(version))
-      .then((c) => c.match(VERSION_URL));
+    const cached = await cache.match(VERSION_URL);
     if (cached) return cached;
     return new Response(JSON.stringify({ error: String(err && err.message) }), {
       status: 504,
@@ -235,8 +182,7 @@ async function networkFirstVersion(request) {
 }
 
 async function cacheFirst(request) {
-  const version = activeVersion || (await resolveVersion());
-  const cache = await caches.open(shellCacheName(version));
+  const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(request, { ignoreSearch: true });
   if (cached) return cached;
 
@@ -248,12 +194,11 @@ async function cacheFirst(request) {
 }
 
 async function networkFirstPrice(request) {
-  const version = activeVersion || (await resolveVersion());
-  const cache = await caches.open(priceCacheName(version));
+  const cache = await caches.open(PRICE_CACHE);
   try {
     const response = await networkFetch(request);
     if (response && response.ok) {
-      await putPriceCache(request, response, version);
+      await putPriceCache(request, response);
       return response;
     }
     throw new Error("Bad network response");
