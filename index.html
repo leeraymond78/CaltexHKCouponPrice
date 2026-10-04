@@ -48,6 +48,7 @@
         height: 100%;
         overflow: hidden;
         overscroll-behavior: none;
+        color-scheme: dark;
       }
 
       html,
@@ -60,10 +61,11 @@
       }
 
       body {
-        min-height: 100%;
-        min-height: 100dvh;
-        padding: calc(0.7rem + env(safe-area-inset-top, 0px)) 1rem
-          calc(0.75rem + env(safe-area-inset-bottom, 0px));
+        height: 100%;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
         background: var(--bg);
         overflow: hidden;
         overscroll-behavior: none;
@@ -852,15 +854,565 @@
         }
       }
 
+
+      .views {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .view-calc {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
+        padding: calc(0.7rem + env(safe-area-inset-top, 0px)) 1rem 0.85rem;
+      }
+
+      .view-calc.is-locked {
+        overflow: hidden;
+      }
+
+      .view-calc[hidden],
+      .view-map[hidden] {
+        display: none !important;
+      }
+
+      .view-map.is-active {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        padding-top: env(safe-area-inset-top, 0px);
+        background: #0c0c0c;
+      }
+
+      .map-pane {
+        position: relative;
+        flex: 1 1 0;
+        min-height: 0;
+        overflow: hidden;
+        background: #0c0c0c;
+      }
+
+      .map-pane > .map-canvas,
+      .map-pane > .map-canvas.maplibregl-map {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        font-family: var(--font);
+      }
+
+      .map-fallback {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: grid;
+        place-items: center;
+        margin: 0;
+        padding: 1.25rem;
+        background: #121212;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+        text-align: center;
+      }
+
+      .map-fallback[hidden] {
+        display: none !important;
+      }
+
+      .map-pane .maplibregl-ctrl-attrib.maplibregl-compact,
+      .map-pane .maplibregl-ctrl-attrib.maplibregl-compact-show {
+        background-color: rgba(13, 13, 13, 0.88);
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 10px;
+        border-radius: 8px;
+      }
+
+      .map-pane .maplibregl-ctrl-attrib a {
+        color: rgba(255, 255, 255, 0.78);
+      }
+
+      .map-pane .maplibregl-ctrl-attrib-button {
+        background-color: transparent;
+        filter: invert(1);
+      }
+
+      .maplibregl-popup.station-popup .maplibregl-popup-content {
+        background: #1a1a1a;
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 0.55rem 0.7rem;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+        font-family: var(--font);
+      }
+
+      .maplibregl-popup.station-popup.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+        border-top-color: #1a1a1a;
+      }
+
+      .maplibregl-popup.station-popup.maplibregl-popup-anchor-top .maplibregl-popup-tip {
+        border-bottom-color: #1a1a1a;
+      }
+
+      .popup-name {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .popup-street,
+      .popup-phone {
+        display: block;
+        margin-top: 0.15rem;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.35;
+      }
+
+      .popup-phone {
+        margin-top: 0.35rem;
+        color: var(--teal);
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .station-pin {
+        appearance: none;
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          #00c9b1 0 5px,
+          rgba(0, 201, 177, 0.28) 6px 10px,
+          transparent 11px
+        );
+        cursor: pointer;
+      }
+
+      .station-pin.is-selected {
+        background: radial-gradient(
+          circle,
+          #ff6b4a 0 6px,
+          rgba(255, 107, 74, 0.38) 7px 13px,
+          transparent 14px
+        );
+      }
+
+      .user-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #4da3ff;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 6px rgba(77, 163, 255, 0.28);
+        animation: userPulse 2s ease-out infinite;
+      }
+
+      @keyframes userPulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(77, 163, 255, 0.45);
+        }
+        100% {
+          box-shadow: 0 0 0 12px rgba(77, 163, 255, 0);
+        }
+      }
+
+      .list-pane {
+        flex: 1 1 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        background: var(--bg);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .list-head {
+        flex-shrink: 0;
+        padding: 0.65rem 0.85rem 0.45rem;
+      }
+
+      .list-title-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+
+      .list-title {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .list-status {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+        text-align: right;
+      }
+
+      .list-status[data-state="error"] {
+        color: var(--coral);
+      }
+
+      .station-tools {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin-top: 0.55rem;
+      }
+
+      .station-search {
+        appearance: none;
+        -webkit-appearance: none;
+        flex: 1;
+        min-width: 0;
+        min-height: 40px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: #161616;
+        color: var(--text);
+        font: inherit;
+        font-size: 16px;
+        padding: 0 0.75rem;
+      }
+
+      .station-search::placeholder {
+        color: rgba(255, 255, 255, 0.38);
+      }
+
+      .locate-btn {
+        appearance: none;
+        flex-shrink: 0;
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: #161616;
+        color: rgba(255, 255, 255, 0.78);
+        cursor: pointer;
+      }
+
+      .locate-btn.is-on {
+        color: var(--teal);
+        background: color-mix(in srgb, var(--teal) 16%, #161616);
+        border-color: color-mix(in srgb, var(--teal) 45%, transparent);
+      }
+
+      .locate-btn:disabled {
+        opacity: 0.55;
+      }
+
+      .station-filters {
+        display: flex;
+        gap: 0.35rem;
+        margin-top: 0.5rem;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+      }
+
+      .station-filters::-webkit-scrollbar {
+        display: none;
+      }
+
+      .station-filters button {
+        appearance: none;
+        flex-shrink: 0;
+        min-height: 32px;
+        padding: 0 0.7rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: #141414;
+        color: rgba(255, 255, 255, 0.72);
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+
+      .station-filters button[aria-pressed="true"] {
+        background: color-mix(in srgb, var(--teal) 18%, #141414);
+        color: var(--text);
+        border-color: color-mix(in srgb, var(--teal) 45%, transparent);
+      }
+
+      .station-scroll {
+        flex: 1 1 auto;
+        min-height: 0;
+        margin: 0;
+        padding: 0 0 0.35rem;
+        list-style: none;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .station-row {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.1rem 0.55rem 0.1rem 0.15rem;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .station-row.is-selected {
+        background: color-mix(in srgb, var(--teal) 14%, #101010);
+      }
+
+      .station-open {
+        appearance: none;
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.12rem;
+        margin: 0;
+        padding: 0.55rem 0.35rem 0.6rem 0.7rem;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        touch-action: manipulation;
+        box-shadow: inset 3px 0 0 transparent;
+      }
+
+      .station-row.is-selected .station-open {
+        box-shadow: inset 3px 0 0 var(--teal);
+      }
+
+      .station-name-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+
+      .station-name {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .station-dist {
+        flex-shrink: 0;
+        color: var(--teal);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .station-street {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .station-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.28rem;
+        margin-top: 0.2rem;
+      }
+
+      .fuel-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 18px;
+        padding: 0 0.4rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: #1c1c1c;
+        color: rgba(255, 255, 255, 0.75);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .fuel-chip[data-fuel="gold"] {
+        color: #4ade80;
+        background: color-mix(in srgb, #4ade80 12%, #121212);
+        border-color: color-mix(in srgb, #4ade80 35%, transparent);
+      }
+
+      .fuel-chip[data-fuel="platinum"] {
+        color: #ff8f3d;
+        background: color-mix(in srgb, #ff8f3d 14%, #121212);
+        border-color: color-mix(in srgb, #ff8f3d 40%, transparent);
+      }
+
+      .fuel-chip[data-fuel="diesel"] {
+        color: #d4d4d4;
+      }
+
+      .fuel-chip[data-fuel="autogas"] {
+        color: #7dd3fc;
+        background: color-mix(in srgb, #7dd3fc 12%, #121212);
+        border-color: color-mix(in srgb, #7dd3fc 35%, transparent);
+      }
+
+      .fuel-chip[data-fuel="ev"] {
+        color: var(--teal);
+        background: color-mix(in srgb, var(--teal) 12%, #121212);
+        border-color: color-mix(in srgb, var(--teal) 35%, transparent);
+      }
+
+      .station-call {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 32px;
+        margin-right: 0.2rem;
+        padding: 0 0.65rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: #1c1c1c;
+        color: var(--teal);
+        font-size: 12px;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .station-empty {
+        padding: 1.4rem 1rem 1rem;
+        text-align: center;
+      }
+
+      .station-empty p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      .station-retry {
+        appearance: none;
+        margin-top: 0.75rem;
+        min-height: 40px;
+        padding: 0 0.95rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: #1a1a1a;
+        color: var(--text);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .tabbar-wrap {
+        flex-shrink: 0;
+        padding: 0.35rem 0.75rem calc(0.45rem + env(safe-area-inset-bottom, 0px));
+        background: var(--bg);
+      }
+
+      .tabbar {
+        width: min(420px, 100%);
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.25rem;
+        padding: 0.28rem;
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(26, 26, 26, 0.94);
+        box-shadow:
+          0 10px 30px rgba(0, 0, 0, 0.35),
+          inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(18px) saturate(160%);
+        -webkit-backdrop-filter: blur(18px) saturate(160%);
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .tabbar button {
+        appearance: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.12rem;
+        min-height: 52px;
+        border: 0;
+        border-radius: 16px;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.5);
+        font: inherit;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        cursor: pointer;
+        touch-action: manipulation;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .tabbar button svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      .tabbar button[aria-selected="true"] {
+        background: color-mix(in srgb, var(--teal) 16%, #1c1c1c);
+        color: var(--teal);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--teal) 38%, transparent);
+      }
+
+      @media (hover: hover) {
+        .station-row:hover {
+          background: rgba(255, 255, 255, 0.03);
+        }
+
+        .station-row.is-selected:hover {
+          background: color-mix(in srgb, var(--teal) 14%, #101010);
+        }
+      }
+
       @media (prefers-reduced-motion: reduce) {
         .flip.is-updating,
-        .result-card.is-pulsing {
+        .result-card.is-pulsing,
+        .user-dot {
           animation: none;
         }
       }
     </style>
   </head>
-  <body>
+  <body data-tab="prices">
+    <div class="views">
+    <div
+      class="view view-calc is-active"
+      id="viewCalc"
+      role="tabpanel"
+      aria-labelledby="tabPrices"
+    >
     <div class="app" id="app">
       <button type="button" class="update-banner" id="updateBanner" hidden>
         Update available — tap to refresh
@@ -1040,6 +1592,131 @@
         <p class="app-version" id="appVersion" hidden></p>
       </footer>
     </div>
+    </div>
+
+    <div
+      class="view view-map"
+      id="viewMap"
+      role="tabpanel"
+      aria-labelledby="tabMap"
+      hidden
+    >
+      <div class="map-pane">
+        <div
+          id="stationMap"
+          class="map-canvas"
+          role="application"
+          aria-label="Map of Caltex petrol stations"
+        ></div>
+        <p class="map-fallback" id="mapFallback" hidden>Loading map…</p>
+      </div>
+      <section class="list-pane" aria-labelledby="stationListTitle">
+        <div class="list-head">
+          <div class="list-title-row">
+            <h2 class="list-title" id="stationListTitle">Stations</h2>
+            <p class="list-status" id="stationStatus" aria-live="polite">
+              Loading stations…
+            </p>
+          </div>
+          <div class="station-tools">
+            <input
+              id="stationSearch"
+              class="station-search"
+              type="search"
+              placeholder="Search name or street"
+              autocomplete="off"
+              autocapitalize="off"
+              autocorrect="off"
+              enterkeyhint="search"
+              aria-label="Search stations"
+            />
+            <button
+              type="button"
+              class="locate-btn"
+              id="locateBtn"
+              aria-pressed="false"
+              aria-label="Sort by my location"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8" />
+                <circle cx="12" cy="12" r="7.25" stroke="currentColor" stroke-width="1.8" />
+                <path
+                  d="M12 2.75v2.2M12 19.05V21.25M2.75 12h2.2M19.05 12H21.25"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
+          </div>
+          <div
+            class="station-filters"
+            id="stationFilters"
+            role="group"
+            aria-label="Filter stations"
+          >
+            <button type="button" data-filter="all" aria-pressed="true">All</button>
+            <button type="button" data-filter="gold" aria-pressed="false">Gold</button>
+            <button type="button" data-filter="platinum" aria-pressed="false">
+              Platinum
+            </button>
+            <button type="button" data-filter="diesel" aria-pressed="false">Diesel</button>
+            <button type="button" data-filter="ev" aria-pressed="false">EV</button>
+          </div>
+        </div>
+        <ul class="station-scroll" id="stationScroll" aria-label="Caltex petrol stations"></ul>
+      </section>
+    </div>
+    </div>
+
+    <div class="tabbar-wrap">
+      <nav class="tabbar" role="tablist" aria-label="Sections">
+        <button
+          type="button"
+          role="tab"
+          id="tabPrices"
+          aria-controls="viewCalc"
+          aria-selected="true"
+        >
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect
+              x="5"
+              y="3"
+              width="14"
+              height="18"
+              rx="2.5"
+              stroke="currentColor"
+              stroke-width="1.8"
+            />
+            <path
+              d="M8 8h8M8 12h3M13 12h3M8 16h3M13 16h3"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            />
+          </svg>
+          Prices
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="tabMap"
+          aria-controls="viewMap"
+          aria-selected="false"
+        >
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M12 21s6-5.2 6-10a6 6 0 1 0-12 0c0 4.8 6 10 6 10z"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linejoin="round"
+            />
+            <circle cx="12" cy="11" r="2.15" fill="currentColor" />
+          </svg>
+          Map
+        </button>
+      </nav>
+    </div>
 
     <div class="sheet-backdrop" id="chartBackdrop" hidden>
       <div
@@ -1095,7 +1772,7 @@
       const HISTORY_URL = "data/price-history.json";
       const VERSION_URL = "version.json";
       /** Must match version.json at deploy time — detects stale HTML shells. */
-      const APP_BUILD_VERSION = "1.1.5";
+      const APP_BUILD_VERSION = "1.2.0";
       const FORCE_RELOAD_KEY = "pwa_force_reload";
       const CACHE_MIGRATE_KEY = "pwa_cache_migrate_1_1_5";
       const DEFAULTS_URL = "defaults.json";
@@ -1776,20 +2453,9 @@
       }
 
       function syncPageScrollLock() {
-        if (!appEl || chartOpen) {
-          document.body.classList.remove("is-scrollable");
-          return;
-        }
-        const styles = getComputedStyle(document.body);
-        const padY =
-          (parseFloat(styles.paddingTop) || 0) +
-          (parseFloat(styles.paddingBottom) || 0);
-        const contentHeight = appEl.getBoundingClientRect().height + padY;
-        const needsScroll = contentHeight > window.innerHeight + 1;
-        document.body.classList.toggle("is-scrollable", needsScroll);
-        if (!needsScroll && window.scrollY !== 0) {
-          window.scrollTo(0, 0);
-        }
+        const calcView = document.getElementById("viewCalc");
+        if (!calcView) return;
+        calcView.classList.toggle("is-locked", chartOpen);
       }
 
       function normalizeSemver(value) {
@@ -2340,14 +3006,747 @@
         renderCalculation();
       });
 
+
+      const STATIONS_LIVE_URL =
+        "https://www.caltex.com/bin/services/getStations.json?pagePath=/hk/en/find-us&siteType=b2c";
+      const STATIONS_LOCAL_URL = "data/stations.json";
+      const STATIONS_CACHE_KEY = "stations_cache_v1";
+      const MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/dark";
+      const MAPLIBRE_JS =
+        "https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js";
+      const MAPLIBRE_CSS =
+        "https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css";
+
+      const viewCalc = document.getElementById("viewCalc");
+      const viewMap = document.getElementById("viewMap");
+      const tabPrices = document.getElementById("tabPrices");
+      const tabMap = document.getElementById("tabMap");
+      const stationMapEl = document.getElementById("stationMap");
+      const mapFallback = document.getElementById("mapFallback");
+      const stationScroll = document.getElementById("stationScroll");
+      const stationStatus = document.getElementById("stationStatus");
+      const stationSearch = document.getElementById("stationSearch");
+      const stationFilters = document.getElementById("stationFilters");
+      const locateBtn = document.getElementById("locateBtn");
+
+      /** @type {Array<{id:string,name:string,street:string,phone:string,lat:number,lng:number,fuels:string[],amenities:string[]}>} */
+      let stations = [];
+      let stationQuery = "";
+      let fuelFilter = "all";
+      let selectedStationId = null;
+      /** @type {{lat:number,lng:number}|null} */
+      let userLoc = null;
+      let stationMap = null;
+      let mapReady = false;
+      let mapBooted = false;
+      let mapTracked = false;
+      let userMovedMap = false;
+      let ignorePopupClose = false;
+      let fitTimer = 0;
+      /** @type {Map<string, any>} */
+      const markerById = new Map();
+      let userMarker = null;
+      let stationPopup = null;
+
+      function prefersReducedMotion() {
+        return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      }
+
+      function motionDuration(ms) {
+        return prefersReducedMotion() ? 0 : ms;
+      }
+
+      function fuelKey(name) {
+        const n = String(name || "").toLowerCase();
+        if (n.includes("platinum")) return "platinum";
+        if (n.includes("gold")) return "gold";
+        if (n.includes("diesel")) return "diesel";
+        if (n.includes("gas")) return "autogas";
+        return "other";
+      }
+
+      function fuelLabelShort(name) {
+        const key = fuelKey(name);
+        if (key === "platinum") return "Platinum";
+        if (key === "gold") return "Gold";
+        if (key === "diesel") return "Diesel";
+        if (key === "autogas") return "AutoGas";
+        return String(name || "").trim();
+      }
+
+      function normalizeStations(data) {
+        if (!Array.isArray(data)) return [];
+        const out = [];
+        for (const row of data) {
+          const lat = Number(row?.latitude);
+          const lng = Number(row?.longitude);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+          out.push({
+            id: String(row?.id || row?.siteId || row?.name || out.length),
+            name: String(row?.name || "Station").trim(),
+            street: String(row?.street || "").trim(),
+            phone: String(row?.phoneNumber || "").trim(),
+            lat,
+            lng,
+            fuels: Array.isArray(row?.fuelsName)
+              ? row.fuelsName.map((item) => String(item))
+              : [],
+            amenities: Array.isArray(row?.amenitiesName)
+              ? row.amenitiesName.map((item) => String(item))
+              : [],
+          });
+        }
+        return out;
+      }
+
+      function readStationsCache() {
+        try {
+          const raw = localStorage.getItem(STATIONS_CACHE_KEY);
+          if (!raw) return [];
+          return normalizeStations(JSON.parse(raw));
+        } catch {
+          return [];
+        }
+      }
+
+      function writeStationsCache(data) {
+        try {
+          localStorage.setItem(STATIONS_CACHE_KEY, JSON.stringify(data));
+        } catch {
+          /* ignore quota / private mode */
+        }
+      }
+
+      function haversineKm(lat1, lng1, lat2, lng2) {
+        const r = 6371;
+        const dLat = ((lat2 - lat1) * Math.PI) / 180;
+        const dLng = ((lng2 - lng1) * Math.PI) / 180;
+        const sLat = Math.sin(dLat / 2);
+        const sLng = Math.sin(dLng / 2);
+        const a =
+          sLat * sLat +
+          Math.cos((lat1 * Math.PI) / 180) *
+            Math.cos((lat2 * Math.PI) / 180) *
+            sLng *
+            sLng;
+        return 2 * r * Math.asin(Math.min(1, Math.sqrt(a)));
+      }
+
+      function formatDistance(km) {
+        if (!Number.isFinite(km)) return "";
+        if (km < 1) return `${Math.max(1, Math.round(km * 1000))} m`;
+        if (km < 10) return `${km.toFixed(1)} km`;
+        return `${Math.round(km)} km`;
+      }
+
+      function stationDistance(station) {
+        if (!userLoc) return NaN;
+        return haversineKm(userLoc.lat, userLoc.lng, station.lat, station.lng);
+      }
+
+      function stationMatches(station) {
+        const q = stationQuery.trim().toLowerCase();
+        if (q) {
+          const blob =
+            `${station.name} ${station.street} ${station.phone}`.toLowerCase();
+          if (!blob.includes(q)) return false;
+        }
+        if (fuelFilter === "ev") {
+          return station.amenities.some((item) => /ev/i.test(item));
+        }
+        if (fuelFilter !== "all") {
+          return station.fuels.some((item) => fuelKey(item) === fuelFilter);
+        }
+        return true;
+      }
+
+      function visibleStations() {
+        const list = stations.filter(stationMatches);
+        if (!userLoc) return list;
+        return list.sort((a, b) => stationDistance(a) - stationDistance(b));
+      }
+
+      function setStationStatus(text, isError = false) {
+        stationStatus.textContent = text;
+        stationStatus.dataset.state = isError ? "error" : "";
+      }
+
+      function statusForList(shown) {
+        if (!stations.length) return "Couldn’t load stations";
+        if (!shown) return "No matches";
+        if (shown === stations.length) return `${shown} stations`;
+        return `${shown} of ${stations.length}`;
+      }
+
+      function telHref(phone) {
+        const compact = String(phone || "").replace(/[^\d+]/g, "");
+        return compact ? `tel:${compact}` : "";
+      }
+
+      function appendChip(parent, label, key) {
+        const chip = document.createElement("span");
+        chip.className = "fuel-chip";
+        chip.dataset.fuel = key;
+        chip.textContent = label;
+        parent.appendChild(chip);
+      }
+
+      function showMapFallback(message) {
+        mapFallback.hidden = false;
+        mapFallback.textContent = message;
+      }
+
+      function hideMapFallback() {
+        mapFallback.hidden = true;
+      }
+
+      function syncMarkerVisibility() {
+        const visible = new Set(visibleStations().map((station) => station.id));
+        for (const [id, marker] of markerById) {
+          marker.getElement().hidden = !visible.has(id);
+        }
+      }
+
+      function syncMarkerSelection() {
+        for (const [id, marker] of markerById) {
+          const el = marker.getElement();
+          const on = id === selectedStationId;
+          el.classList.toggle("is-selected", on);
+          el.style.zIndex = on ? "3" : "1";
+        }
+      }
+
+      function syncListSelection(scroll) {
+        stationScroll.querySelectorAll(".station-row").forEach((row) => {
+          const on = row.dataset.id === selectedStationId;
+          row.classList.toggle("is-selected", on);
+          const btn = row.querySelector(".station-open");
+          if (btn) btn.setAttribute("aria-pressed", String(on));
+          if (on && scroll) row.scrollIntoView({ block: "nearest" });
+        });
+      }
+
+      function closePopup(silent) {
+        if (!stationPopup) return;
+        ignorePopupClose = silent;
+        stationPopup.remove();
+        ignorePopupClose = false;
+      }
+
+      function showPopup(station) {
+        if (!stationMap || !mapReady || !window.maplibregl) return;
+        const root = document.createElement("div");
+        const name = document.createElement("strong");
+        name.className = "popup-name";
+        name.textContent = station.name;
+        const street = document.createElement("span");
+        street.className = "popup-street";
+        street.textContent = station.street || "Hong Kong";
+        root.append(name, street);
+        const href = telHref(station.phone);
+        if (href) {
+          const phone = document.createElement("a");
+          phone.className = "popup-phone";
+          phone.href = href;
+          phone.textContent = station.phone;
+          root.appendChild(phone);
+        }
+        if (!stationPopup) {
+          stationPopup = new maplibregl.Popup({
+            offset: 18,
+            closeButton: false,
+            closeOnClick: true,
+            className: "station-popup",
+            maxWidth: "240px",
+          });
+          stationPopup.on("close", () => {
+            if (ignorePopupClose) return;
+            selectedStationId = null;
+            syncMarkerSelection();
+            syncListSelection(false);
+          });
+        }
+        stationPopup
+          .setLngLat([station.lng, station.lat])
+          .setDOMContent(root)
+          .addTo(stationMap);
+      }
+
+      function fitVisible() {
+        if (!stationMap || !mapReady || userMovedMap || !window.maplibregl) return;
+        const list = visibleStations();
+        if (!list.length) return;
+        if (list.length === 1) {
+          stationMap.flyTo({
+            center: [list[0].lng, list[0].lat],
+            zoom: 14,
+            duration: motionDuration(600),
+            essential: true,
+          });
+          return;
+        }
+        const bounds = new maplibregl.LngLatBounds();
+        list.forEach((station) => bounds.extend([station.lng, station.lat]));
+        stationMap.fitBounds(bounds, {
+          padding: { top: 36, right: 32, bottom: 40, left: 32 },
+          duration: motionDuration(600),
+          maxZoom: 13,
+        });
+      }
+
+      function scheduleFit() {
+        window.clearTimeout(fitTimer);
+        fitTimer = window.setTimeout(fitVisible, 220);
+      }
+
+      function placeUserMarker() {
+        if (!stationMap || !mapReady || !userLoc || !window.maplibregl) return;
+        if (!userMarker) {
+          const el = document.createElement("div");
+          el.className = "user-dot";
+          el.title = "You";
+          userMarker = new maplibregl.Marker({ element: el, anchor: "center" })
+            .setLngLat([userLoc.lng, userLoc.lat])
+            .addTo(stationMap);
+          return;
+        }
+        userMarker.setLngLat([userLoc.lng, userLoc.lat]);
+      }
+
+      function placeMarkers() {
+        if (!stationMap || !mapReady || !window.maplibregl) return;
+        const seen = new Set();
+        for (const station of stations) {
+          seen.add(station.id);
+          if (markerById.has(station.id)) continue;
+          const el = document.createElement("button");
+          el.type = "button";
+          el.className = "station-pin";
+          el.dataset.id = station.id;
+          el.setAttribute("aria-label", station.name);
+          el.addEventListener("click", (event) => {
+            event.stopPropagation();
+            selectStation(station.id, { fly: false, scroll: true });
+          });
+          const marker = new maplibregl.Marker({ element: el, anchor: "center" })
+            .setLngLat([station.lng, station.lat])
+            .addTo(stationMap);
+          markerById.set(station.id, marker);
+        }
+        for (const [id, marker] of markerById) {
+          if (seen.has(id)) continue;
+          marker.remove();
+          markerById.delete(id);
+        }
+        syncMarkerVisibility();
+        syncMarkerSelection();
+      }
+
+      function renderStationList() {
+        const list = visibleStations();
+        if (
+          selectedStationId &&
+          !list.some((station) => station.id === selectedStationId)
+        ) {
+          selectedStationId = null;
+          closePopup(true);
+          syncMarkerSelection();
+        }
+
+        stationScroll.replaceChildren();
+        if (!list.length) {
+          const item = document.createElement("li");
+          item.className = "station-empty";
+          const msg = document.createElement("p");
+          msg.textContent = stations.length
+            ? "No stations match your search."
+            : "Couldn’t load the station list.";
+          item.appendChild(msg);
+          if (!stations.length) {
+            const retry = document.createElement("button");
+            retry.type = "button";
+            retry.className = "station-retry";
+            retry.textContent = "Try again";
+            retry.addEventListener("click", () => {
+              reloadStations();
+            });
+            item.appendChild(retry);
+          }
+          stationScroll.appendChild(item);
+          setStationStatus(statusForList(0), !stations.length);
+          syncMarkerVisibility();
+          return;
+        }
+
+        for (const station of list) {
+          const row = document.createElement("li");
+          row.className = "station-row";
+          row.dataset.id = station.id;
+          if (station.id === selectedStationId) row.classList.add("is-selected");
+
+          const open = document.createElement("button");
+          open.type = "button";
+          open.className = "station-open";
+          open.dataset.id = station.id;
+          open.setAttribute(
+            "aria-pressed",
+            String(station.id === selectedStationId),
+          );
+
+          const nameRow = document.createElement("span");
+          nameRow.className = "station-name-row";
+          const name = document.createElement("span");
+          name.className = "station-name";
+          name.textContent = station.name;
+          nameRow.appendChild(name);
+          const km = stationDistance(station);
+          if (Number.isFinite(km)) {
+            const dist = document.createElement("span");
+            dist.className = "station-dist";
+            dist.textContent = formatDistance(km);
+            nameRow.appendChild(dist);
+          }
+
+          const street = document.createElement("span");
+          street.className = "station-street";
+          street.textContent = station.street || "Hong Kong";
+
+          const chips = document.createElement("span");
+          chips.className = "station-chips";
+          const seen = new Set();
+          for (const fuel of station.fuels) {
+            const label = fuelLabelShort(fuel);
+            if (!label || seen.has(label)) continue;
+            seen.add(label);
+            appendChip(chips, label, fuelKey(fuel));
+          }
+          if (station.amenities.some((item) => /ev/i.test(item))) {
+            appendChip(chips, "EV", "ev");
+          }
+
+          open.append(nameRow, street, chips);
+          row.appendChild(open);
+
+          const href = telHref(station.phone);
+          if (href) {
+            const call = document.createElement("a");
+            call.className = "station-call";
+            call.href = href;
+            call.textContent = "Call";
+            call.setAttribute("aria-label", `Call ${station.name}`);
+            row.appendChild(call);
+          }
+          stationScroll.appendChild(row);
+        }
+
+        setStationStatus(statusForList(list.length));
+        syncMarkerVisibility();
+      }
+
+      function selectStation(id, opts = {}) {
+        const station = stations.find((item) => item.id === id);
+        if (!station) return;
+        window.clearTimeout(fitTimer);
+        selectedStationId = id;
+        userMovedMap = true;
+        syncMarkerSelection();
+        syncListSelection(Boolean(opts.scroll));
+        if (opts.fly && stationMap && mapReady) {
+          stationMap.flyTo({
+            center: [station.lng, station.lat],
+            zoom: Math.max(stationMap.getZoom(), 14.2),
+            duration: motionDuration(700),
+            essential: true,
+          });
+        }
+        showPopup(station);
+      }
+
+      async function loadLocalStations() {
+        try {
+          const response = await fetch(STATIONS_LOCAL_URL, { cache: "no-store" });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return normalizeStations(await response.json());
+        } catch {
+          return [];
+        }
+      }
+
+      async function loadLiveStations() {
+        try {
+          const response = await fetch(STATIONS_LIVE_URL, {
+            headers: { accept: "application/json, text/plain, */*" },
+          });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const data = await response.json();
+          const next = normalizeStations(data);
+          if (next.length) writeStationsCache(data);
+          return next;
+        } catch {
+          /* Caltex does not send CORS headers, so the bundled list is used. */
+          return [];
+        }
+      }
+
+      async function reloadStations() {
+        setStationStatus("Loading stations…");
+        const local = await loadLocalStations();
+        const live = await loadLiveStations();
+        stations = live.length ? live : local.length ? local : readStationsCache();
+        userMovedMap = false;
+        renderStationList();
+        placeMarkers();
+        placeUserMarker();
+        fitVisible();
+      }
+
+      function ensureMapLibre() {
+        if (window.maplibregl) return Promise.resolve();
+        if (!document.querySelector("link[data-maplibre]")) {
+          const link = document.createElement("link");
+          link.rel = "stylesheet";
+          link.href = MAPLIBRE_CSS;
+          link.dataset.maplibre = "1";
+          document.head.appendChild(link);
+        }
+        return new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = MAPLIBRE_JS;
+          script.async = true;
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error("maplibre"));
+          document.head.appendChild(script);
+        });
+      }
+
+      function createMap() {
+        if (stationMap || !window.maplibregl) return;
+        stationMap = new maplibregl.Map({
+          container: stationMapEl,
+          style: MAP_STYLE_URL,
+          center: [114.15, 22.34],
+          zoom: 10.2,
+          attributionControl: false,
+          dragRotate: false,
+          pitchWithRotate: false,
+          touchPitch: false,
+          maxBounds: [
+            [113.75, 22.08],
+            [114.5, 22.62],
+          ],
+        });
+        stationMap.addControl(
+          new maplibregl.AttributionControl({ compact: true }),
+          "bottom-right",
+        );
+        stationMap
+          .getContainer()
+          .querySelector(".maplibregl-ctrl-attrib")
+          ?.classList.remove("maplibregl-compact-show");
+        stationMap.on("load", () => {
+          mapReady = true;
+          hideMapFallback();
+          placeMarkers();
+          placeUserMarker();
+          fitVisible();
+          stationMap.resize();
+          stationMap
+            .getContainer()
+            .querySelector(".maplibregl-ctrl-attrib")
+            ?.classList.remove("maplibregl-compact-show");
+        });
+        stationMap.on("dragstart", () => {
+          userMovedMap = true;
+        });
+        if (typeof ResizeObserver === "function") {
+          new ResizeObserver(() => {
+            if (document.body.dataset.tab === "map") stationMap.resize();
+          }).observe(viewMap);
+        }
+      }
+
+      async function bootMap() {
+        setStationStatus("Loading stations…");
+        showMapFallback("Loading map…");
+        await new Promise((resolve) => {
+          requestAnimationFrame(() => resolve());
+        });
+        const localPromise = loadLocalStations();
+        const livePromise = loadLiveStations();
+        const mapPromise = ensureMapLibre()
+          .then(() => true)
+          .catch(() => false);
+        const local = await localPromise;
+        if (local.length) {
+          stations = local;
+          renderStationList();
+        } else {
+          const cached = readStationsCache();
+          if (cached.length) {
+            stations = cached;
+            renderStationList();
+          }
+        }
+        const mapOk = await mapPromise;
+        if (!mapOk || !window.maplibregl) {
+          showMapFallback(
+            "Map couldn’t load. The station list is still available.",
+          );
+        } else {
+          createMap();
+        }
+        const live = await livePromise;
+        if (live.length) {
+          stations = live;
+          renderStationList();
+          placeMarkers();
+          placeUserMarker();
+          fitVisible();
+        } else if (!stations.length) {
+          renderStationList();
+        }
+        window.setTimeout(() => {
+          if (!mapReady && mapOk) {
+            showMapFallback(
+              "Map is taking a while. The station list is ready below.",
+            );
+          }
+        }, 12000);
+      }
+
+      function openMapPage() {
+        if (!mapBooted) {
+          mapBooted = true;
+          bootMap();
+          return;
+        }
+        if (stationMap) {
+          stationMap.resize();
+          window.setTimeout(() => {
+            if (stationMap) stationMap.resize();
+          }, 60);
+        }
+      }
+
+      function setActiveTab(tab) {
+        const showMap = tab === "map";
+        const next = showMap ? "map" : "prices";
+        if (document.body.dataset.tab === next) {
+          if (showMap) openMapPage();
+          return;
+        }
+        document.body.dataset.tab = next;
+        viewCalc.hidden = showMap;
+        viewMap.hidden = !showMap;
+        viewCalc.classList.toggle("is-active", !showMap);
+        viewMap.classList.toggle("is-active", showMap);
+        tabPrices.setAttribute("aria-selected", String(!showMap));
+        tabMap.setAttribute("aria-selected", String(showMap));
+        const url = new URL(location.href);
+        history.replaceState(
+          null,
+          "",
+          url.pathname + url.search + (showMap ? "#map" : ""),
+        );
+        if (showMap) {
+          if (!mapTracked) {
+            mapTracked = true;
+            trackEvent("open_map");
+          }
+          openMapPage();
+        }
+      }
+
+      function locateUser() {
+        if (!navigator.geolocation) {
+          setStationStatus("Location isn’t available on this device", true);
+          return;
+        }
+        locateBtn.disabled = true;
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            locateBtn.disabled = false;
+            userLoc = {
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+            };
+            locateBtn.classList.add("is-on");
+            locateBtn.setAttribute("aria-pressed", "true");
+            window.clearTimeout(fitTimer);
+            userMovedMap = true;
+            renderStationList();
+            placeUserMarker();
+            if (stationMap && mapReady) {
+              stationMap.flyTo({
+                center: [userLoc.lng, userLoc.lat],
+                zoom: 13,
+                duration: motionDuration(700),
+                essential: true,
+              });
+            }
+          },
+          () => {
+            locateBtn.disabled = false;
+            setStationStatus("Couldn’t use your location", true);
+          },
+          { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 },
+        );
+      }
+
+      function setupStationTabs() {
+        tabPrices.addEventListener("click", () => setActiveTab("prices"));
+        tabMap.addEventListener("click", () => setActiveTab("map"));
+        tabPrices.parentElement.addEventListener("keydown", (event) => {
+          if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+          event.preventDefault();
+          const next = document.body.dataset.tab === "map" ? "prices" : "map";
+          setActiveTab(next);
+          (next === "map" ? tabMap : tabPrices).focus();
+        });
+        stationFilters.addEventListener("click", (event) => {
+          const btn = event.target.closest("button[data-filter]");
+          if (!btn || btn.dataset.filter === fuelFilter) return;
+          fuelFilter = btn.dataset.filter;
+          stationFilters.querySelectorAll("button[data-filter]").forEach((el) => {
+            el.setAttribute("aria-pressed", String(el === btn));
+          });
+          userMovedMap = false;
+          renderStationList();
+          fitVisible();
+        });
+        stationSearch.addEventListener("input", () => {
+          stationQuery = stationSearch.value;
+          userMovedMap = false;
+          renderStationList();
+          scheduleFit();
+        });
+        locateBtn.addEventListener("click", locateUser);
+        stationScroll.addEventListener("click", (event) => {
+          const btn = event.target.closest(".station-open");
+          if (!btn) return;
+          selectStation(btn.dataset.id, { fly: true, scroll: false });
+        });
+        window.addEventListener("hashchange", () => {
+          const want = location.hash === "#map" ? "map" : "prices";
+          if (document.body.dataset.tab !== want) setActiveTab(want);
+        });
+        if (location.hash === "#map") setActiveTab("map");
+      }
+
       window.addEventListener("online", () => {
         updateOnlineUi();
         loadPrices();
       });
       window.addEventListener("offline", updateOnlineUi);
-      window.addEventListener("resize", syncPageScrollLock);
+      window.addEventListener("resize", () => {
+        syncPageScrollLock();
+        if (document.body.dataset.tab === "map" && stationMap) stationMap.resize();
+      });
       window.addEventListener("orientationchange", () => {
-        window.setTimeout(syncPageScrollLock, 100);
+        window.setTimeout(() => {
+          syncPageScrollLock();
+          if (document.body.dataset.tab === "map" && stationMap) stationMap.resize();
+        }, 100);
       });
       if (typeof ResizeObserver === "function") {
         new ResizeObserver(syncPageScrollLock).observe(appEl);
@@ -2361,6 +3760,7 @@
       syncCouponGrid();
       syncChartMetricToggle();
       setupPwaInstallTracking();
+      setupStationTabs();
       trackPageView();
       loadDefaults().then(() => {
         loadEnergyDiscountFor(selectedFuel);

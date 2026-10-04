@@ -81,6 +81,18 @@ function isPriceRequest(request) {
   }
 }
 
+function isStationsRequest(request) {
+  try {
+    const url = new URL(request.url);
+    return (
+      url.origin === self.location.origin &&
+      url.pathname.endsWith("/data/stations.json")
+    );
+  } catch {
+    return false;
+  }
+}
+
 function isVersionRequest(request) {
   try {
     const url = new URL(request.url);
@@ -232,7 +244,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (isPriceRequest(event.request)) {
+  if (isPriceRequest(event.request) || isStationsRequest(event.request)) {
     event.respondWith(networkFirstPrice(event.request));
     return;
   }

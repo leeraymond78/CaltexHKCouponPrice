@@ -75,3 +75,27 @@ jobs:
       - name: No Caltex app changes
         if: steps.diff.outputs.app_changed != 'true'
         run: echo "No Caltex Gold/Platinum changes — skipped commit."
+
+      - name: Fetch Caltex station list
+        run: |
+          mkdir -p data
+          curl -fsSL \
+            -A "Mozilla/5.0 (compatible; CaltexHKCouponPrice/1.0; +https://github.com/${{ github.repository }})" \
+            -H "accept: application/json, text/plain, */*" \
+            -H "referer: https://www.caltex.com/hk/en/find-us.html" \
+            -o /tmp/stations.raw.json \
+            "https://www.caltex.com/bin/services/getStations.json?pagePath=/hk/en/find-us&siteType=b2c"
+          python3 -m json.tool /tmp/stations.raw.json > data/stations.json
+          echo "Fetched $(python3 -c 'import json; print(len(json.load(open("data/stations.json"))))') stations"
+
+      - name: Commit station list if changed
+        run: |
+          git add data/stations.json
+          if git diff --cached --quiet; then
+            echo "No station list changes — skipped commit."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore: update Caltex station list ($(TZ=Asia/Hong_Kong date +%Y-%m-%d))"
+            git push
+          fi

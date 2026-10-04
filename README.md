@@ -14,15 +14,19 @@ A mobile-friendly calculator for **Hong Kong Caltex StarCard** and **Buy $300 Fr
 - **Buy $300 Free $50 Coupons** selector (1–5)
 - Results: **Net Payment**, **Real Price** / L, **Litres**, **You Save**
 - Remembers grade, coupon count, StarCard amounts, and Board/Real chart preference
-- Installable **PWA** — works offline with the last prices it loaded
+- **Map** tab: Caltex Hong Kong stations on an [OpenFreeMap](https://openfreemap.org/) map, with a list underneath
+- Search stations, filter by **Gold**, **Platinum**, **Diesel**, or **EV**, and sort by your location
+- Tap a station to focus the map; call the station from the list
+- Installable **PWA** — works offline with the last prices and station list it loaded
 
 ## How to use
 
 1. Open the live app link above.
-2. Choose **Gold** or **Platinum**. Board prices load automatically.
+2. On **Prices**, choose **Gold** or **Platinum**. Board prices load automatically.
 3. Set your **StarCard discount** (HK$ per litre).
 4. Pick how many coupons you will use (1–5).
 5. Read **Net Payment**, **Real Price**, litres, and how much you save.
+6. Open **Map** to find a Caltex station.
 
 If live prices cannot load, enter the board price yourself.
 
@@ -34,6 +38,10 @@ Pump prices come from the [Consumer Council Hong Kong Oil Watch](https://www.con
 
 All amounts are in **Hong Kong dollars (HK$)**.
 
+## Stations
+
+Station locations come from the [Caltex Hong Kong find-us feed](https://www.caltex.com/bin/services/getStations.json?pagePath=/hk/en/find-us&siteType=b2c) and are refreshed daily via GitHub Actions into `data/stations.json`. The map uses [OpenFreeMap](https://openfreemap.org/) tiles.
+
 ## Version
 
-See `version.json` (currently **1.1.1**). Releases: https://github.com/leeraymond78/CaltexHKCouponPrice/releases
+See `version.json` (currently **1.2.0**). Releases: https://github.com/leeraymond78/CaltexHKCouponPrice/releases
