@@ -1,8 +1,8 @@
 {
-  "name": "Caltex Discount",
-  "short_name": "Caltex Discount",
-  "lang": "en",
-  "description": "Offline-ready Caltex PWA to calculate Hong Kong petrol coupon savings",
+  "name": "加德士優惠",
+  "short_name": "加德士優惠",
+  "lang": "zh-Hant",
+  "description": "離線計算香港加德士油券優惠",
   "start_url": "./?utm_medium=pwa",
   "scope": "./",
   "display": "standalone",

@@ -1,9 +1,15 @@
+import { trackEvent } from "./analytics.js";
+import { getLang, onLangChange, t } from "./i18n.js";
 import { isChartOpen } from "./prices.js";
 
-const STATIONS_LIVE_URL =
-  "https://www.caltex.com/bin/services/getStations.json?pagePath=/hk/en/find-us&siteType=b2c";
-const STATIONS_LOCAL_URL = "data/stations.json";
-const STATIONS_CACHE_KEY = "stations_cache_v1";
+const STATIONS_LIVE = {
+  en: "https://www.caltex.com/bin/services/getStations.json?pagePath=/hk/en/find-us&siteType=b2c",
+  zh: "https://www.caltex.com/bin/services/getStations.json?pagePath=/hk/zh/find-us&siteType=b2c",
+};
+const STATIONS_LOCAL = {
+  en: "data/stations.json",
+  zh: "data/stations-zh.json",
+};
 const MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/dark";
 const MAPLIBRE_JS =
   "https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js";
@@ -43,6 +49,10 @@ let fitTimer = 0;
 const markerById = new Map();
 let userMarker = null;
 let stationPopup = null;
+let stationStatusMode = "message";
+let stationStatusKey = "map.loading";
+let stationStatusError = false;
+let fallbackKey = null;
 
 function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -52,21 +62,36 @@ function motionDuration(ms) {
   return prefersReducedMotion() ? 0 : ms;
 }
 
+function stationLang() {
+  return getLang() === "zh" ? "zh" : "en";
+}
+
+function stationsCacheKey(lang) {
+  return `stations_cache_v2_${lang}`;
+}
+
 function fuelKey(name) {
   const n = String(name || "").toLowerCase();
-  if (n.includes("platinum")) return "platinum";
-  if (n.includes("gold")) return "gold";
-  if (n.includes("diesel")) return "diesel";
-  if (n.includes("gas")) return "autogas";
+  if (n.includes("platinum") || n.includes("白金")) return "platinum";
+  if (n.includes("gold") || n.includes("黃金")) return "gold";
+  if (n.includes("diesel") || n.includes("柴油")) return "diesel";
+  if (n.includes("autogas") || n.includes("石油氣") || n.includes("gas")) {
+    return "autogas";
+  }
   return "other";
+}
+
+function isEvAmenity(name) {
+  const n = String(name || "");
+  return /ev/i.test(n) || n.includes("電動");
 }
 
 function fuelLabelShort(name) {
   const key = fuelKey(name);
-  if (key === "platinum") return "Platinum";
-  if (key === "gold") return "Gold";
-  if (key === "diesel") return "Diesel";
-  if (key === "autogas") return "AutoGas";
+  if (key === "platinum") return t("fuel.map.platinum");
+  if (key === "gold") return t("fuel.map.gold");
+  if (key === "diesel") return t("fuel.map.diesel");
+  if (key === "autogas") return t("fuel.map.autogas");
   return String(name || "").trim();
 }
 
@@ -85,19 +110,19 @@ function normalizeStations(data) {
       lat,
       lng,
       fuels: Array.isArray(row?.fuelsName)
-        ? row.fuelsName.map((item) => String(item))
+        ? row.fuelsName.map((item) => String(item).trim()).filter(Boolean)
         : [],
       amenities: Array.isArray(row?.amenitiesName)
-        ? row.amenitiesName.map((item) => String(item))
+        ? row.amenitiesName.map((item) => String(item).trim()).filter(Boolean)
         : [],
     });
   }
   return out;
 }
 
-function readStationsCache() {
+function readStationsCache(lang) {
   try {
-    const raw = localStorage.getItem(STATIONS_CACHE_KEY);
+    const raw = localStorage.getItem(stationsCacheKey(lang));
     if (!raw) return [];
     return normalizeStations(JSON.parse(raw));
   } catch {
@@ -105,9 +130,9 @@ function readStationsCache() {
   }
 }
 
-function writeStationsCache(data) {
+function writeStationsCache(data, lang) {
   try {
-    localStorage.setItem(STATIONS_CACHE_KEY, JSON.stringify(data));
+    localStorage.setItem(stationsCacheKey(lang), JSON.stringify(data));
   } catch {
     /* ignore quota / private mode */
   }
@@ -148,7 +173,7 @@ function stationMatches(station) {
     if (!blob.includes(q)) return false;
   }
   if (fuelFilter === "ev") {
-    return station.amenities.some((item) => /ev/i.test(item));
+    return station.amenities.some((item) => isEvAmenity(item));
   }
   if (fuelFilter !== "all") {
     return station.fuels.some((item) => fuelKey(item) === fuelFilter);
@@ -167,11 +192,42 @@ function setStationStatus(text, isError = false) {
   stationStatus.dataset.state = isError ? "error" : "";
 }
 
-function statusForList(shown) {
-  if (!stations.length) return "Couldn’t load stations";
-  if (!shown) return "No matches";
-  if (shown === stations.length) return `${shown} stations`;
-  return `${shown} of ${stations.length}`;
+function showStationMessage(key, isError = false) {
+  stationStatusMode = "message";
+  stationStatusKey = key;
+  stationStatusError = isError;
+  setStationStatus(t(key), isError);
+}
+
+function showListStatus(shown) {
+  stationStatusMode = "list";
+  if (!stations.length) {
+    stationStatusKey = "map.noStations";
+    stationStatusError = true;
+    setStationStatus(t("map.noStations"), true);
+    return;
+  }
+  stationStatusError = false;
+  if (!shown) {
+    stationStatusKey = "map.noMatches";
+    setStationStatus(t("map.noMatches"), false);
+    return;
+  }
+  if (shown === stations.length) {
+    stationStatusKey = shown === 1 ? "map.stationCountOne" : "map.stationCount";
+    setStationStatus(
+      shown === 1
+        ? t("map.stationCountOne")
+        : t("map.stationCount", { n: shown }),
+      false,
+    );
+    return;
+  }
+  stationStatusKey = "map.stationSubset";
+  setStationStatus(
+    t("map.stationSubset", { shown, total: stations.length }),
+    false,
+  );
 }
 
 function telHref(phone) {
@@ -198,6 +254,7 @@ function mapDirectionLinks(station) {
 let navReturnFocus = null;
 
 function openNav(station, trigger) {
+  trackEvent("open_navigation");
   const links = mapDirectionLinks(station);
   navApple.href = links.apple;
   navGoogle.href = links.google;
@@ -228,12 +285,14 @@ function appendChip(parent, label, key) {
   parent.appendChild(chip);
 }
 
-function showMapFallback(message) {
+function showMapFallback(key) {
+  fallbackKey = key;
   mapFallback.hidden = false;
-  mapFallback.textContent = message;
+  mapFallback.textContent = t(key);
 }
 
 function hideMapFallback() {
+  fallbackKey = null;
   mapFallback.hidden = true;
 }
 
@@ -278,7 +337,7 @@ function showPopup(station) {
   name.textContent = station.name;
   const street = document.createElement("span");
   street.className = "popup-street";
-  street.textContent = station.street || "Hong Kong";
+  street.textContent = station.street || t("map.hongKong");
   root.append(name, street);
   const href = telHref(station.phone);
   if (href) {
@@ -341,7 +400,7 @@ function placeUserMarker() {
   if (!userMarker) {
     const el = document.createElement("div");
     el.className = "user-dot";
-    el.title = "You";
+    el.title = t("map.you");
     userMarker = new maplibregl.Marker({ element: el, anchor: "center" })
       .setLngLat([userLoc.lng, userLoc.lat])
       .addTo(stationMap);
@@ -379,7 +438,7 @@ function placeMarkers() {
   syncMarkerSelection();
 }
 
-function renderStationList() {
+function renderStationList(options = {}) {
   const list = visibleStations();
   if (
     selectedStationId &&
@@ -396,21 +455,21 @@ function renderStationList() {
     item.className = "station-empty";
     const msg = document.createElement("p");
     msg.textContent = stations.length
-      ? "No stations match your search."
-      : "Couldn’t load the station list.";
+      ? t("map.emptySearch")
+      : t("map.emptyList");
     item.appendChild(msg);
     if (!stations.length) {
       const retry = document.createElement("button");
       retry.type = "button";
       retry.className = "station-retry";
-      retry.textContent = "Try again";
+      retry.textContent = t("map.retry");
       retry.addEventListener("click", () => {
         reloadStations();
       });
       item.appendChild(retry);
     }
     stationScroll.appendChild(item);
-    setStationStatus(statusForList(0), !stations.length);
+    if (!options.keepStatus) showListStatus(0);
     syncMarkerVisibility();
     return;
   }
@@ -446,7 +505,7 @@ function renderStationList() {
 
     const street = document.createElement("span");
     street.className = "station-street";
-    street.textContent = station.street || "Hong Kong";
+    street.textContent = station.street || t("map.hongKong");
 
     const chips = document.createElement("span");
     chips.className = "station-chips";
@@ -457,8 +516,8 @@ function renderStationList() {
       seen.add(label);
       appendChip(chips, label, fuelKey(fuel));
     }
-    if (station.amenities.some((item) => /ev/i.test(item))) {
-      appendChip(chips, "EV", "ev");
+    if (station.amenities.some((item) => isEvAmenity(item))) {
+      appendChip(chips, t("fuel.map.ev"), "ev");
     }
 
     open.append(nameRow, street, chips);
@@ -467,8 +526,8 @@ function renderStationList() {
     const nav = document.createElement("button");
     nav.type = "button";
     nav.className = "station-nav";
-    nav.textContent = "Navigate";
-    nav.setAttribute("aria-label", `Navigate to ${station.name}`);
+    nav.textContent = t("map.navigate");
+    nav.setAttribute("aria-label", t("map.navigateTo", { name: station.name }));
     nav.addEventListener("click", () => {
       openNav(station, nav);
     });
@@ -476,7 +535,7 @@ function renderStationList() {
     stationScroll.appendChild(row);
   }
 
-  setStationStatus(statusForList(list.length));
+  if (!options.keepStatus) showListStatus(list.length);
   syncMarkerVisibility();
 }
 
@@ -499,9 +558,9 @@ function selectStation(id, opts = {}) {
   showPopup(station);
 }
 
-async function loadLocalStations() {
+async function loadLocalStations(lang) {
   try {
-    const response = await fetch(STATIONS_LOCAL_URL, { cache: "no-store" });
+    const response = await fetch(STATIONS_LOCAL[lang], { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return normalizeStations(await response.json());
   } catch {
@@ -509,15 +568,15 @@ async function loadLocalStations() {
   }
 }
 
-async function loadLiveStations() {
+async function loadLiveStations(lang) {
   try {
-    const response = await fetch(STATIONS_LIVE_URL, {
+    const response = await fetch(STATIONS_LIVE[lang], {
       headers: { accept: "application/json, text/plain, */*" },
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     const next = normalizeStations(data);
-    if (next.length) writeStationsCache(data);
+    if (next.length) writeStationsCache(data, lang);
     return next;
   } catch {
     /* Caltex does not send CORS headers, so the bundled list is used. */
@@ -525,16 +584,50 @@ async function loadLiveStations() {
   }
 }
 
-async function reloadStations() {
-  setStationStatus("Loading stations…");
-  const local = await loadLocalStations();
-  const live = await loadLiveStations();
-  stations = live.length ? live : local.length ? local : readStationsCache();
-  userMovedMap = false;
+let stationsRequest = 0;
+
+function publishStations(next, { refit }) {
+  stations = next;
   renderStationList();
   placeMarkers();
   placeUserMarker();
-  fitVisible();
+  if (refit) {
+    userMovedMap = false;
+    fitVisible();
+  }
+  const selected = stations.find((station) => station.id === selectedStationId);
+  if (selected && stationPopup) showPopup(selected);
+  else if (!selected && selectedStationId) {
+    selectedStationId = null;
+    closePopup(true);
+  }
+}
+
+async function loadStationsForCurrentLang({ refit = false } = {}) {
+  const token = ++stationsRequest;
+  const lang = stationLang();
+  showStationMessage("map.loading");
+  const localPromise = loadLocalStations(lang);
+  const livePromise = loadLiveStations(lang);
+  const local = await localPromise;
+  if (token !== stationsRequest) return;
+  if (local.length) publishStations(local, { refit });
+  else {
+    const cached = readStationsCache(lang);
+    if (token !== stationsRequest) return;
+    if (cached.length) publishStations(cached, { refit });
+  }
+  const live = await livePromise;
+  if (token !== stationsRequest) return;
+  if (live.length) {
+    publishStations(live, { refit });
+    return;
+  }
+  if (!stations.length) renderStationList();
+}
+
+function reloadStations() {
+  return loadStationsForCurrentLang({ refit: true });
 }
 
 function ensureMapLibre() {
@@ -603,50 +696,23 @@ function createMap() {
 }
 
 async function bootMap() {
-  setStationStatus("Loading stations…");
-  showMapFallback("Loading map…");
+  showMapFallback("map.loadingMap");
   await new Promise((resolve) => {
     requestAnimationFrame(() => resolve());
   });
-  const localPromise = loadLocalStations();
-  const livePromise = loadLiveStations();
-  const mapPromise = ensureMapLibre()
+  const stationsPromise = loadStationsForCurrentLang({ refit: true });
+  const mapOk = await ensureMapLibre()
     .then(() => true)
     .catch(() => false);
-  const local = await localPromise;
-  if (local.length) {
-    stations = local;
-    renderStationList();
-  } else {
-    const cached = readStationsCache();
-    if (cached.length) {
-      stations = cached;
-      renderStationList();
-    }
-  }
-  const mapOk = await mapPromise;
   if (!mapOk || !window.maplibregl) {
-    showMapFallback(
-      "Map couldn’t load. The station list is still available.",
-    );
+    showMapFallback("map.mapFailed");
   } else {
     createMap();
   }
-  const live = await livePromise;
-  if (live.length) {
-    stations = live;
-    renderStationList();
-    placeMarkers();
-    placeUserMarker();
-    fitVisible();
-  } else if (!stations.length) {
-    renderStationList();
-  }
+  await stationsPromise;
   window.setTimeout(() => {
     if (!mapReady && mapOk) {
-      showMapFallback(
-        "Map is taking a while. The station list is ready below.",
-      );
+      showMapFallback("map.mapSlow");
     }
   }, 12000);
 }
@@ -666,7 +732,7 @@ export function openMapPage() {
 }
 function locateUser() {
   if (!navigator.geolocation) {
-    setStationStatus("Location isn’t available on this device", true);
+    showStationMessage("map.locUnavailable", true);
     return;
   }
   locateBtn.disabled = true;
@@ -694,7 +760,7 @@ function locateUser() {
     },
     () => {
       locateBtn.disabled = false;
-      setStationStatus("Couldn’t use your location", true);
+      showStationMessage("map.locFailed", true);
     },
     { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 },
   );
@@ -708,6 +774,15 @@ export function resizeMap() {
   if (stationMap) stationMap.resize();
 }
 
+onLangChange(() => {
+  if (fallbackKey) showMapFallback(fallbackKey);
+  if (userMarker) {
+    const el = userMarker.getElement?.();
+    if (el) el.title = t("map.you");
+  }
+  if (mapBooted) loadStationsForCurrentLang();
+});
+
 export function initMap() {
   stationFilters.addEventListener("click", (event) => {
     const btn = event.target.closest("button[data-filter]");
@@ -719,6 +794,7 @@ export function initMap() {
     userMovedMap = false;
     renderStationList();
     fitVisible();
+    trackEvent("filter_stations", { filter: fuelFilter });
   });
   stationSearch.addEventListener("input", () => {
     stationQuery = stationSearch.value;
@@ -726,20 +802,29 @@ export function initMap() {
     renderStationList();
     scheduleFit();
   });
-  locateBtn.addEventListener("click", locateUser);
+  locateBtn.addEventListener("click", () => {
+    trackEvent("locate_station");
+    locateUser();
+  });
   navClose.addEventListener("click", closeNav);
   navCancel.addEventListener("click", closeNav);
   navBackdrop.addEventListener("click", (event) => {
     if (event.target === navBackdrop) closeNav();
   });
-  for (const link of [navApple, navGoogle, navAmap]) {
+  for (const [app, link] of [
+    ["apple", navApple],
+    ["google", navGoogle],
+    ["amap", navAmap],
+  ]) {
     link.addEventListener("click", () => {
+      trackEvent("choose_navigation", { app });
       window.setTimeout(closeNav, 0);
     });
   }
   stationScroll.addEventListener("click", (event) => {
     const btn = event.target.closest(".station-open");
     if (!btn) return;
+    trackEvent("select_station");
     selectStation(btn.dataset.id, { fly: true, scroll: false });
   });
 }

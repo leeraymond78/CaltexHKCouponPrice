@@ -1,4 +1,5 @@
 import { trackEvent } from "./analytics.js";
+import { localeTag, onLangChange, t } from "./i18n.js";
 
 const PRICE_URL = "data/oilprice.json";
 const HISTORY_URL = "data/price-history.json";
@@ -75,6 +76,7 @@ let lastResultSignature = "";
 let chartOpen = false;
 let lastFocus = null;
 let chartMetric = readChartMetric();
+let priceNotice = { state: "loading", key: "prices.loading", vars: null };
 function round2(value) {
   return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 }
@@ -124,9 +126,11 @@ function calculate(params) {
 
 function formatTime(ts) {
   try {
-    return new Date(ts).toLocaleString();
+    return new Date(ts).toLocaleString(localeTag(), {
+      timeZone: "Asia/Hong_Kong",
+    });
   } catch {
-    return "unknown";
+    return t("time.unknown");
   }
 }
 
@@ -151,7 +155,7 @@ function formatShortDate(iso) {
   if (!iso) return "—";
   const date = new Date(`${iso}T12:00:00+08:00`);
   if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleDateString("en-GB", {
+  return date.toLocaleDateString(localeTag(), {
     day: "numeric",
     month: "short",
     timeZone: "Asia/Hong_Kong",
@@ -173,6 +177,10 @@ function formatAxisDate(iso) {
 }
 
 function fuelLabel(fuel = selectedFuel) {
+  return t(fuel === "Premium Petrol" ? "fuel.platinum" : "fuel.gold");
+}
+
+function fuelTrackLabel(fuel = selectedFuel) {
   return fuel === "Premium Petrol" ? "Platinum" : "Gold";
 }
 
@@ -367,18 +375,28 @@ function syncChartMetricToggle() {
   });
 }
 
+function changeCountText(changeCount) {
+  if (changeCount === 0) return t("chart.noChanges");
+  if (changeCount === 1) return t("chart.changeOne");
+  return t("chart.changes", { n: changeCount });
+}
+
 function renderChartSheet() {
   const points = seriesForChart();
-  const metricLabel = chartMetric === "real" ? "real price" : "board price";
-  chartTitle.textContent = `${fuelLabel()} ${metricLabel}`;
+  const metricLabel =
+    chartMetric === "real" ? t("chart.realLower") : t("chart.boardLower");
+  chartTitle.textContent = t("chart.heading", {
+    fuel: fuelLabel(),
+    metric: metricLabel,
+  });
   const changeCount = Math.max(0, points.length - 1);
-  const countText =
-    changeCount === 0
-      ? "No recorded changes yet"
-      : `Last ${changeCount} recorded change${changeCount === 1 ? "" : "s"}`;
+  const countText = changeCountText(changeCount);
   chartSub.textContent =
     chartMetric === "real"
-      ? `${countText} · −$${money(currentEnergyDiscount())}/L`
+      ? t("chart.withDiscount", {
+          count: countText,
+          amount: money(currentEnergyDiscount()),
+        })
       : countText;
 
   priceChart.replaceChildren();
@@ -520,14 +538,20 @@ function renderPriceChange() {
   priceChangeDate.textContent = formatShortDate(change.curr.date);
   const verb =
     dir === "down"
-      ? "decreased"
+      ? t("chart.decreased")
       : dir === "up"
-        ? "increased"
-        : "unchanged";
-  const kind = chartMetric === "real" ? "Real price" : "Board price";
+        ? t("chart.increased")
+        : t("chart.unchanged");
+  const kind = chartMetric === "real" ? t("chart.real") : t("chart.board");
   priceChangeBtn.setAttribute(
     "aria-label",
-    `${kind} ${verb} from $${money(change.prev.price)} to $${money(change.curr.price)} on ${formatShortDate(change.curr.date)}. Show recent changes.`,
+    t("chart.changeAria", {
+      kind,
+      verb,
+      from: money(change.prev.price),
+      to: money(change.curr.price),
+      date: formatShortDate(change.curr.date),
+    }),
   );
 }
 
@@ -542,7 +566,7 @@ function openChart() {
   priceChangeBtn.setAttribute("aria-expanded", "true");
   document.body.classList.add("sheet-open");
   trackEvent("open_price_chart", {
-    grade: fuelLabel(),
+    grade: fuelTrackLabel(),
     metric: chartMetric,
   });
   chartClose.focus();
@@ -572,6 +596,17 @@ function setTextWithFlip(el, next) {
 function setUpdated(state, text) {
   updatedEl.dataset.state = state;
   updatedEl.textContent = text;
+}
+
+function priceNoticeVars() {
+  const vars = priceNotice.vars;
+  if (!vars || typeof vars.time !== "number") return vars;
+  return { ...vars, time: formatTime(vars.time) };
+}
+
+function showPriceNotice(state, key, vars = null) {
+  priceNotice = { state, key, vars };
+  setUpdated(state, t(key, priceNoticeVars()));
 }
 
 function setManualBoardMode(enabled) {
@@ -754,7 +789,9 @@ function syncBoardPriceFromSelection() {
   boardPrice = Number.isFinite(value) ? value : NaN;
   setTextWithFlip(
     boardPriceDisplay,
-    Number.isFinite(boardPrice) ? `$${money(boardPrice)} / L` : "— / L",
+    Number.isFinite(boardPrice)
+      ? t("unit.price", { amount: money(boardPrice) })
+      : t("unit.priceEmpty"),
   );
 }
 
@@ -780,7 +817,7 @@ function clampEnergyOnBlur() {
   if (energyDiscountEl.dataset.lastTracked === signature) return;
   energyDiscountEl.dataset.lastTracked = signature;
   trackEvent("change_starcard_discount", {
-    grade: fuelLabel(),
+    grade: fuelTrackLabel(),
     value,
   });
 }
@@ -799,7 +836,12 @@ function renderCalculation() {
 
   setTextWithFlip(
     couponSummary,
-    `${selectedCoupons} × $${COUPON_VALUE} = $${totalSpend} total  •  $${totalRebate} discount`,
+    t("calc.couponSummary", {
+      n: selectedCoupons,
+      face: COUPON_VALUE,
+      spend: totalSpend,
+      rebate: totalRebate,
+    }),
   );
 
   if (
@@ -808,8 +850,8 @@ function renderCalculation() {
     !Number.isFinite(energyDiscount)
   ) {
     setTextWithFlip(netPaymentEl, "$—");
-    setTextWithFlip(realPriceEl, "$— / L");
-    setTextWithFlip(litresEl, "— L");
+    setTextWithFlip(realPriceEl, t("unit.priceEmpty"));
+    setTextWithFlip(litresEl, t("unit.litresEmpty"));
     setTextWithFlip(youSaveEl, "$—");
     if (chartMetric === "real") renderPriceChange();
     if (chartOpen) renderChartSheet();
@@ -834,9 +876,12 @@ function renderCalculation() {
   setTextWithFlip(netPaymentEl, `$${money(result.netPayment)}`);
   setTextWithFlip(
     realPriceEl,
-    `$${money(result.realPricePerLitre)} / L`,
+    t("unit.price", { amount: money(result.realPricePerLitre) }),
   );
-  setTextWithFlip(litresEl, `${money(result.litresObtained)} L`);
+  setTextWithFlip(
+    litresEl,
+    t("unit.litres", { amount: money(result.litresObtained) }),
+  );
   setTextWithFlip(
     youSaveEl,
     Number.isFinite(result.actualDiscount)
@@ -859,14 +904,13 @@ function refreshUi() {
   syncPageScrollLock();
 }
 
-function applyPrices(nextPrices, time, state, message) {
+function applyPrices(nextPrices, time, state, notice) {
   prices = nextPrices;
   setManualBoardMode(false);
-  setUpdated(
-    state,
-    message ||
-      (time ? `Last updated: ${formatTime(time)}` : "Last updated: —"),
-  );
+  if (notice) showPriceNotice(state, notice.key, notice.vars);
+  else if (time) {
+    showPriceNotice(state, "prices.lastUpdated", { time });
+  } else showPriceNotice(state, "prices.lastUpdatedEmpty");
   refreshUi();
 }
 
@@ -878,13 +922,10 @@ export async function loadPrices() {
   if (cached) {
     prices = parseJsonToPrices(cached.text);
     setManualBoardMode(false);
-    setUpdated(
-      "loading",
-      "Getting latest prices online… (showing last saved for now)",
-    );
+    showPriceNotice("loading", "prices.loadingCached");
     refreshUi();
   } else {
-    setUpdated("loading", "Getting latest prices online…");
+    showPriceNotice("loading", "prices.loading");
   }
 
   const [priceResult, historyResult] = await Promise.allSettled([
@@ -904,7 +945,10 @@ export async function loadPrices() {
       parseJsonToPrices(text),
       time,
       "live",
-      `Latest online · updated ${formatTime(time)}`,
+      {
+        key: "prices.live",
+        vars: { time },
+      },
     );
     return;
   }
@@ -915,17 +959,19 @@ export async function loadPrices() {
       parseJsonToPrices(cached.text),
       cached.time,
       "cached",
-      `Couldn’t reach live data · using saved prices from ${formatTime(cached.time)}`,
+      {
+        key: "prices.cached",
+        vars: { time: cached.time },
+      },
     );
     return;
   }
 
   prices = {};
   setManualBoardMode(true);
-  setUpdated(
-    "error",
-    `Couldn’t load live prices (${liveError.message || "error"})`,
-  );
+  showPriceNotice("error", "prices.loadError", {
+    message: liveError.message || "error",
+  });
   refreshUi();
 }
 priceChangeBtn.addEventListener("click", openChart);
@@ -954,7 +1000,7 @@ fuelToggle.addEventListener("click", (event) => {
   syncFuelToggle();
   loadEnergyDiscountFor(selectedFuel);
   refreshUi();
-  trackEvent("select_grade", { grade: fuelLabel(selectedFuel) });
+  trackEvent("select_grade", { grade: fuelTrackLabel(selectedFuel) });
 });
 
 couponGrid.addEventListener("click", (event) => {
@@ -996,6 +1042,11 @@ export function bindPrices() {
   window.calculate = calculate;
   window.getPrices = () => prices;
 }
+
+onLangChange(() => {
+  setUpdated(priceNotice.state, t(priceNotice.key, priceNoticeVars()));
+  refreshUi();
+});
 
 export function restorePrices() {
   return loadDefaults().then(() => {

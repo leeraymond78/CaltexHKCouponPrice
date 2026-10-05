@@ -7,6 +7,7 @@ const PRICE_TTL_MS = 6 * 60 * 60 * 1000;
 /** Offline fallback only — never precache HTML (avoids old SW poisoning install). */
 const STATIC_ASSETS = [
   "./manifest.json",
+  "./manifest-zh.json",
   "./defaults.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
@@ -16,7 +17,9 @@ const STATIC_ASSETS = [
   "./css/base.css",
   "./css/prices.css",
   "./css/map.css",
+  "./css/settings.css",
   "./js/main.js",
+  "./js/i18n.js",
   "./js/prices.js",
   "./js/map.js",
   "./js/analytics.js",
@@ -93,7 +96,8 @@ function isStationsRequest(request) {
     const url = new URL(request.url);
     return (
       url.origin === self.location.origin &&
-      url.pathname.endsWith("/data/stations.json")
+      (url.pathname.endsWith("/data/stations.json") ||
+        url.pathname.endsWith("/data/stations-zh.json"))
     );
   } catch {
     return false;

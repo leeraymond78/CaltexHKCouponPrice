@@ -197,7 +197,8 @@ input:focus-visible {
 }
 
 .view-calc[hidden],
-.view-map[hidden] {
+.view-map[hidden],
+.view-settings[hidden] {
   display: none !important;
 }
 
@@ -220,7 +221,7 @@ input:focus-visible {
   height: 62px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 0.25rem;
   padding: 0.28rem;
   border-radius: 22px;

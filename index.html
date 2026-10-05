@@ -9,6 +9,7 @@
     />
     <meta name="theme-color" content="#0D0D0D" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Caltex Discount" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
       content="default"
@@ -21,10 +22,11 @@
     <link rel="icon" href="icons/favicon-32.png" type="image/png" sizes="32x32" />
     <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192" />
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-    <title>Caltex HK StarCard Discount</title>
+    <title>HK Caltex StarCard Discount</title>
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/prices.css" />
     <link rel="stylesheet" href="css/map.css" />
+    <link rel="stylesheet" href="css/settings.css" />
   </head>
   <body data-tab="prices">
     <div class="views">
@@ -35,18 +37,34 @@
       aria-labelledby="tabPrices"
     >
     <div class="app" id="app">
-      <button type="button" class="update-banner" id="updateBanner" hidden>
+      <button
+        type="button"
+        class="update-banner"
+        id="updateBanner"
+        data-i18n="update.banner"
+        hidden
+      >
         Update available — tap to refresh
       </button>
 
       <header class="header">
-        <span class="offline-pill" id="offlinePill" aria-live="polite"
+        <span
+          class="offline-pill"
+          id="offlinePill"
+          data-i18n="offline"
+          aria-live="polite"
           >Offline</span
         >
-        <h1>Caltex HK StarCard Discount</h1>
+        <h1 data-i18n="prices.title">HK Caltex StarCard Discount</h1>
       </header>
 
-      <div class="warning" id="priceWarning" role="status" aria-live="polite">
+      <div
+        class="warning"
+        id="priceWarning"
+        data-i18n="prices.warning"
+        role="status"
+        aria-live="polite"
+      >
         ⚠️ Could not load live prices. Enter board price manually.
       </div>
 
@@ -54,20 +72,35 @@
         class="fuel-toggle"
         id="fuelToggle"
         role="group"
+        data-i18n-aria="prices.grade"
         aria-label="Grade"
       >
-        <button type="button" data-fuel="Standard Petrol" aria-pressed="true">
+        <button
+          type="button"
+          data-fuel="Standard Petrol"
+          data-i18n="fuel.gold"
+          aria-pressed="true"
+        >
           Gold
         </button>
-        <button type="button" data-fuel="Premium Petrol" aria-pressed="false">
+        <button
+          type="button"
+          data-fuel="Premium Petrol"
+          data-i18n="fuel.platinum"
+          aria-pressed="false"
+        >
           Platinum
         </button>
       </div>
 
-      <section class="card price-card" aria-label="Price details">
+      <section
+        class="card price-card"
+        data-i18n-aria="prices.card"
+        aria-label="Price details"
+      >
         <div class="board-block">
           <div class="price-row">
-            <span class="label">Board Price</span>
+            <span class="label" data-i18n="prices.board">Board Price</span>
             <span class="board-value flip" id="boardPriceDisplay">— / L</span>
             <label class="board-edit" id="boardEdit" for="boardPriceInput">
               <input
@@ -77,9 +110,10 @@
                 step="0.01"
                 inputmode="decimal"
                 placeholder="0.00"
+                data-i18n-aria="prices.boardInput"
                 aria-label="Board price per litre"
               />
-              <span class="suffix">/ L</span>
+              <span class="suffix" data-i18n="unit.suffix">/ L</span>
             </label>
           </div>
           <button
@@ -125,7 +159,7 @@
           </button>
         </div>
         <div class="price-row">
-          <span class="label">StarCard Discount</span>
+            <span class="label" data-i18n="prices.starcard">StarCard Discount</span>
           <label class="energy-edit" for="energyDiscount">
             <span class="prefix">-$</span>
             <input
@@ -136,6 +170,7 @@
               step="0.1"
               inputmode="decimal"
               value="11"
+              data-i18n-aria="prices.starcardInput"
               aria-label="StarCard discount"
               aria-describedby="energyHint"
             />
@@ -160,15 +195,24 @@
             </svg>
           </label>
         </div>
-        <p class="energy-hint" id="energyHint">Enter a value between 0 and 30</p>
+        <p class="energy-hint" id="energyHint" data-i18n="prices.energyHint">
+          Enter a value between 0 and 30
+        </p>
       </section>
 
-      <section class="card coupon-card" aria-label="Buy $300 Free $50 Coupons">
-        <p class="coupon-label">Buy $300 Free $50 Coupons</p>
+      <section
+        class="card coupon-card"
+        data-i18n-aria="prices.couponCard"
+        aria-label="Buy $300 Free $50 Coupons"
+      >
+        <p class="coupon-label" data-i18n="prices.couponLabel">
+          Buy $300 Free $50 Coupons
+        </p>
         <div
           class="coupon-grid"
           id="couponGrid"
           role="group"
+          data-i18n-aria="prices.couponCount"
           aria-label="Coupon count"
         >
           <button type="button" data-count="1" aria-pressed="false">1</button>
@@ -185,32 +229,38 @@
       <section
         class="card result-card"
         id="resultCard"
+        data-i18n-aria="prices.result"
         aria-label="Calculation result"
       >
         <div class="net-row">
-          <p class="net-label">Net Payment</p>
+          <p class="net-label" data-i18n="prices.net">Net Payment</p>
           <p class="net-value flip" id="netPayment">$—</p>
         </div>
         <hr class="result-divider" />
         <div class="stat-row">
-          <span class="k">Real Price</span>
+          <span class="k" data-i18n="prices.real">Real Price</span>
           <span class="v teal flip" id="realPrice">$— / L</span>
         </div>
         <div class="stat-row">
-          <span class="k">Litres</span>
+          <span class="k" data-i18n="prices.litres">Litres</span>
           <span class="v flip" id="litres">— L</span>
         </div>
         <div class="stat-row">
-          <span class="k">You Save</span>
+          <span class="k" data-i18n="prices.save">You Save</span>
           <span class="v green flip" id="youSave">$—</span>
         </div>
       </section>
 
       <footer class="app-footer">
-        <p class="updated" id="updated" data-state="loading" aria-live="polite">
+        <p
+          class="updated"
+          id="updated"
+          data-i18n="prices.loading"
+          data-state="loading"
+          aria-live="polite"
+        >
           Getting latest prices online…
         </p>
-        <p class="app-version" id="appVersion" hidden></p>
       </footer>
     </div>
     </div>
@@ -227,15 +277,25 @@
           id="stationMap"
           class="map-canvas"
           role="application"
+          data-i18n-aria="map.canvas"
           aria-label="Map of Caltex petrol stations"
         ></div>
-        <p class="map-fallback" id="mapFallback" hidden>Loading map…</p>
+        <p class="map-fallback" id="mapFallback" data-i18n="map.loadingMap" hidden>
+          Loading map…
+        </p>
       </div>
       <section class="list-pane" aria-labelledby="stationListTitle">
         <div class="list-head">
           <div class="list-title-row">
-            <h2 class="list-title" id="stationListTitle">Stations</h2>
-            <p class="list-status" id="stationStatus" aria-live="polite">
+            <h2 class="list-title" id="stationListTitle" data-i18n="map.title">
+              Stations
+            </h2>
+            <p
+              class="list-status"
+              id="stationStatus"
+              data-i18n="map.loading"
+              aria-live="polite"
+            >
               Loading stations…
             </p>
           </div>
@@ -244,11 +304,13 @@
               id="stationSearch"
               class="station-search"
               type="search"
+              data-i18n-placeholder="map.searchPlaceholder"
               placeholder="Search name or street"
               autocomplete="off"
               autocapitalize="off"
               autocorrect="off"
               enterkeyhint="search"
+              data-i18n-aria="map.search"
               aria-label="Search stations"
             />
             <button
@@ -256,6 +318,7 @@
               class="locate-btn"
               id="locateBtn"
               aria-pressed="false"
+              data-i18n-aria="map.locate"
               aria-label="Sort by my location"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -274,24 +337,105 @@
             class="station-filters"
             id="stationFilters"
             role="group"
+            data-i18n-aria="map.filters"
             aria-label="Filter stations"
           >
-            <button type="button" data-filter="all" aria-pressed="true">All</button>
-            <button type="button" data-filter="gold" aria-pressed="false">Gold</button>
-            <button type="button" data-filter="platinum" aria-pressed="false">
+            <button type="button" data-filter="all" data-i18n="fuel.all" aria-pressed="true">
+              All
+            </button>
+            <button type="button" data-filter="gold" data-i18n="fuel.map.gold" aria-pressed="false">
+              Gold
+            </button>
+            <button
+              type="button"
+              data-filter="platinum"
+              data-i18n="fuel.map.platinum"
+              aria-pressed="false"
+            >
               Platinum
             </button>
-            <button type="button" data-filter="diesel" aria-pressed="false">Diesel</button>
-            <button type="button" data-filter="ev" aria-pressed="false">EV</button>
+            <button
+              type="button"
+              data-filter="diesel"
+              data-i18n="fuel.map.diesel"
+              aria-pressed="false"
+            >
+              Diesel
+            </button>
+            <button type="button" data-filter="ev" data-i18n="fuel.map.ev" aria-pressed="false">
+              EV
+            </button>
           </div>
         </div>
-        <ul class="station-scroll" id="stationScroll" aria-label="Caltex petrol stations"></ul>
+        <ul
+          class="station-scroll"
+          id="stationScroll"
+          data-i18n-aria="map.list"
+          aria-label="Caltex petrol stations"
+        ></ul>
       </section>
+    </div>
+
+    <div
+      class="view view-settings"
+      id="viewSettings"
+      role="tabpanel"
+      aria-labelledby="tabSettings"
+      hidden
+    >
+      <div class="app">
+        <header class="header">
+          <h1 data-i18n="settings.title">Settings</h1>
+        </header>
+        <section class="card settings-card" aria-labelledby="settingsLangTitle">
+          <h2 class="settings-label" id="settingsLangTitle" data-i18n="settings.language">
+            Language
+          </h2>
+          <div
+            class="lang-toggle"
+            id="langToggle"
+            role="group"
+            data-i18n-aria="settings.languageGroup"
+            aria-label="Language"
+          >
+            <button type="button" data-lang="en" aria-pressed="true">English</button>
+            <button type="button" data-lang="zh" aria-pressed="false">中文</button>
+          </div>
+        </section>
+        <section
+          class="card settings-card settings-version"
+          data-i18n-aria="settings.version"
+          aria-label="Version"
+        >
+          <span class="settings-label" data-i18n="settings.version">Version</span>
+          <p class="app-version" id="appVersion" hidden></p>
+        </section>
+        <section
+          class="card settings-card settings-about"
+          data-i18n-aria="settings.about"
+          aria-label="About"
+        >
+          <div class="settings-row">
+            <span class="settings-label" data-i18n="settings.creator">Creator</span>
+            <span class="settings-value">Raymond Li</span>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">GitHub</span>
+            <a
+              class="settings-link"
+              href="https://github.com/leeraymond78/CaltexHKCouponPrice"
+              target="_blank"
+              rel="noopener noreferrer"
+              >CaltexHKCouponPrice</a
+            >
+          </div>
+        </section>
+      </div>
     </div>
     </div>
 
     <div class="tabbar-wrap">
-      <nav class="tabbar" role="tablist" aria-label="Sections">
+      <nav class="tabbar" role="tablist" data-i18n-aria="nav.sections" aria-label="Sections">
         <button
           type="button"
           role="tab"
@@ -316,7 +460,7 @@
               stroke-linecap="round"
             />
           </svg>
-          Prices
+          <span data-i18n="tab.prices">Prices</span>
         </button>
         <button
           type="button"
@@ -334,7 +478,25 @@
             />
             <circle cx="12" cy="11" r="2.15" fill="currentColor" />
           </svg>
-          Map
+          <span data-i18n="tab.map">Stations</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="tabSettings"
+          aria-controls="viewSettings"
+          aria-selected="false"
+        >
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8" />
+            <path
+              d="M12 3.25v2.1M12 18.65v2.1M3.25 12h2.1M18.65 12h2.1M5.8 5.8l1.5 1.5M16.7 16.7l1.5 1.5M18.2 5.8l-1.5 1.5M7.3 16.7l-1.5 1.5"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            />
+          </svg>
+          <span data-i18n="tab.settings">Settings</span>
         </button>
       </nav>
     </div>
@@ -351,13 +513,16 @@
         <div class="sheet-handle" aria-hidden="true"></div>
         <div class="sheet-header">
           <div>
-            <h2 id="chartTitle">Price changes</h2>
-            <p class="sheet-sub" id="chartSub">Recent recorded changes</p>
+            <h2 id="chartTitle" data-i18n="chart.title">Price changes</h2>
+            <p class="sheet-sub" id="chartSub" data-i18n="chart.sub">
+              Recent recorded changes
+            </p>
           </div>
           <button
             type="button"
             class="sheet-close"
             id="chartClose"
+            data-i18n-aria="chart.close"
             aria-label="Close"
           >
             ×
@@ -367,12 +532,23 @@
           class="chart-metric-toggle"
           id="chartMetricToggle"
           role="group"
+          data-i18n-aria="chart.metric"
           aria-label="Chart metric"
         >
-          <button type="button" data-metric="board" aria-pressed="true">
+          <button
+            type="button"
+            data-metric="board"
+            data-i18n="chart.board"
+            aria-pressed="true"
+          >
             Board Price
           </button>
-          <button type="button" data-metric="real" aria-pressed="false">
+          <button
+            type="button"
+            data-metric="real"
+            data-i18n="chart.real"
+            aria-pressed="false"
+          >
             Real Price
           </button>
         </div>
@@ -400,24 +576,32 @@
         <div class="sheet-handle" aria-hidden="true"></div>
         <div class="sheet-header">
           <div>
-            <h2 id="navTitle">Navigate</h2>
+            <h2 id="navTitle" data-i18n="nav.title">Navigate</h2>
             <p class="sheet-sub" id="navSub"></p>
           </div>
-          <button type="button" class="sheet-close" id="navClose" aria-label="Close">
+          <button
+            type="button"
+            class="sheet-close"
+            id="navClose"
+            data-i18n-aria="nav.close"
+            aria-label="Close"
+          >
             ×
           </button>
         </div>
         <div class="nav-options">
-          <a id="navApple" href="#">Apple Maps</a>
-          <a id="navGoogle" href="#" target="_blank" rel="noopener noreferrer">Google Maps</a>
-          <a id="navAmap" href="#">Amap</a>
-          <button type="button" class="nav-cancel" id="navCancel">Cancel</button>
+          <a id="navApple" href="#" data-i18n="nav.apple">Apple Maps</a>
+          <a id="navGoogle" href="#" data-i18n="nav.google" target="_blank" rel="noopener noreferrer">Google Maps</a>
+          <a id="navAmap" href="#" data-i18n="nav.amap">Amap</a>
+          <button type="button" class="nav-cancel" id="navCancel" data-i18n="nav.cancel">
+            Cancel
+          </button>
         </div>
       </div>
     </div>
 
     <script>
-      window.APP_BUILD_VERSION = "1.2.0";
+      window.APP_BUILD_VERSION = "1.3.0";
     </script>
     <script type="module" src="js/main.js"></script>
     <script

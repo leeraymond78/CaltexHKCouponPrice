@@ -11,6 +11,7 @@ import {
   syncPageScrollLock,
   updateOnlineUi,
 } from "./prices.js";
+import { initI18n } from "./i18n.js";
 import {
   closeNav,
   initMap,
@@ -21,7 +22,7 @@ import {
 
 const VERSION_URL = "version.json";
 /** Must match version.json at deploy time — detects stale HTML shells. */
-const APP_BUILD_VERSION = String(window.APP_BUILD_VERSION || "1.2.0");
+const APP_BUILD_VERSION = String(window.APP_BUILD_VERSION || "1.3.0");
 const FORCE_RELOAD_KEY = "pwa_force_reload";
 const CACHE_MIGRATE_KEY = "pwa_cache_migrate_1_1_5";
 
@@ -29,8 +30,18 @@ const updateBanner = document.getElementById("updateBanner");
 const appVersionEl = document.getElementById("appVersion");
 const viewCalc = document.getElementById("viewCalc");
 const viewMap = document.getElementById("viewMap");
+const viewSettings = document.getElementById("viewSettings");
 const tabPrices = document.getElementById("tabPrices");
 const tabMap = document.getElementById("tabMap");
+const tabSettings = document.getElementById("tabSettings");
+
+const TABS = ["prices", "map", "settings"];
+const VIEWS = { prices: viewCalc, map: viewMap, settings: viewSettings };
+const TAB_BUTTONS = {
+  prices: tabPrices,
+  map: tabMap,
+  settings: tabSettings,
+};
 
 let waitingWorker = null;
 let mapTracked = false;
@@ -213,28 +224,30 @@ function syncAppHeight() {
   if (document.body.dataset.tab === "map") resizeMap();
 }
 
+function tabFromHash() {
+  if (location.hash === "#map") return "map";
+  if (location.hash === "#settings") return "settings";
+  return "prices";
+}
+
 function setActiveTab(tab) {
-  const showMap = tab === "map";
-  const next = showMap ? "map" : "prices";
+  const next = TABS.includes(tab) ? tab : "prices";
   if (document.body.dataset.tab === next) {
-    if (showMap) openMapPage();
+    if (next === "map") openMapPage();
     return;
   }
   document.body.dataset.tab = next;
-  viewCalc.hidden = showMap;
-  viewMap.hidden = !showMap;
-  viewCalc.classList.toggle("is-active", !showMap);
-  viewMap.classList.toggle("is-active", showMap);
-  tabPrices.setAttribute("aria-selected", String(!showMap));
-  tabMap.setAttribute("aria-selected", String(showMap));
+  for (const key of TABS) {
+    const show = key === next;
+    VIEWS[key].hidden = !show;
+    VIEWS[key].classList.toggle("is-active", show);
+    TAB_BUTTONS[key].setAttribute("aria-selected", String(show));
+  }
   const url = new URL(location.href);
-  history.replaceState(
-    null,
-    "",
-    url.pathname + url.search + (showMap ? "#map" : ""),
-  );
-  if (!showMap) closeNav();
-  if (showMap) {
+  const hash = next === "prices" ? "" : `#${next}`;
+  history.replaceState(null, "", url.pathname + url.search + hash);
+  if (next !== "map") closeNav();
+  if (next === "map") {
     if (!mapTracked) {
       mapTracked = true;
       trackEvent("open_map");
@@ -243,21 +256,30 @@ function setActiveTab(tab) {
   }
 }
 
+function onTabClick(tab) {
+  trackEvent("select_tab", { tab });
+  setActiveTab(tab);
+}
+
 function setupTabs() {
-  tabPrices.addEventListener("click", () => setActiveTab("prices"));
-  tabMap.addEventListener("click", () => setActiveTab("map"));
+  tabPrices.addEventListener("click", () => onTabClick("prices"));
+  tabMap.addEventListener("click", () => onTabClick("map"));
+  tabSettings.addEventListener("click", () => onTabClick("settings"));
   tabPrices.parentElement.addEventListener("keydown", (event) => {
     if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
     event.preventDefault();
-    const next = document.body.dataset.tab === "map" ? "prices" : "map";
+    const index = TABS.indexOf(document.body.dataset.tab);
+    const delta = event.key === "ArrowRight" ? 1 : -1;
+    const next = TABS[(index + delta + TABS.length) % TABS.length];
     setActiveTab(next);
-    (next === "map" ? tabMap : tabPrices).focus();
+    TAB_BUTTONS[next].focus();
   });
   window.addEventListener("hashchange", () => {
-    const want = location.hash === "#map" ? "map" : "prices";
+    const want = tabFromHash();
     if (document.body.dataset.tab !== want) setActiveTab(want);
   });
-  if (location.hash === "#map") setActiveTab("map");
+  const initial = tabFromHash();
+  if (initial !== "prices") setActiveTab(initial);
 }
 
 document.addEventListener("keydown", (event) => {
@@ -302,6 +324,7 @@ if (typeof ResizeObserver === "function") {
   if (appEl) new ResizeObserver(syncPageScrollLock).observe(appEl);
 }
 
+initI18n();
 bindPrices();
 initMap();
 setupPwaInstallTracking();
