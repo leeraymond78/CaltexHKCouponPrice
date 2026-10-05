@@ -4,6 +4,16 @@ A mobile-friendly calculator for **Hong Kong Caltex StarCard** and **Buy $300 Fr
 
 **Live app:** https://leeraymond78.github.io/CaltexHKCouponPrice/
 
+## Demo
+
+Open **Prices** to see what you pay after the StarCard discount and coupons. In this example, Gold is **$34.62 / L**, the StarCard discount is **$11 / L**, and **2** coupons are selected. The result is a net payment of **$409.36**, a real price of **$20.25 / L**, **20.22 L**, and **$14.37** saved. The chip under the board price shows the last change (**$34.42 → $34.62** on 19 Sep). Tap it for the chart.
+
+Open **Stations** to find a Caltex station. The map shows every station in Hong Kong. Search by name or street, filter by **Gold**, **Platinum**, **Diesel**, or **EV**, or tap the location button to sort by where you are. Each row lists the fuels on offer. **Navigate** opens Apple Maps, Google Maps, or Amap.
+
+| Prices | Stations |
+| --- | --- |
+| ![Prices screen: Gold at $34.62/L, two coupons, net payment $409.36](docs/demo-prices.png) | ![Stations screen: Hong Kong map and a list of Caltex stations](docs/demo-stations.png) |
+
 ## Features
 
 - **English and Traditional Chinese**, chosen in **Settings** and remembered
