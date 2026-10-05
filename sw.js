@@ -13,6 +13,13 @@ const STATIC_ASSETS = [
   "./icons/apple-touch-icon.png",
   "./icons/favicon-32.png",
   "./icons/favicon-48.png",
+  "./css/base.css",
+  "./css/prices.css",
+  "./css/map.css",
+  "./js/main.js",
+  "./js/prices.js",
+  "./js/map.js",
+  "./js/analytics.js",
 ];
 
 async function deleteOtherCaches() {
@@ -125,6 +132,17 @@ function isSameOrigin(request) {
   return new URL(request.url).origin === self.location.origin;
 }
 
+function isAppCodeRequest(request) {
+  try {
+    const url = new URL(request.url);
+    return (
+      url.origin === self.location.origin && /\.(?:js|css)$/i.test(url.pathname)
+    );
+  } catch {
+    return false;
+  }
+}
+
 function cacheAgeMs(response) {
   const stamped = Number(response.headers.get("x-sw-cached-at") || 0);
   if (!Number.isFinite(stamped) || stamped <= 0) return Number.POSITIVE_INFINITY;
@@ -193,6 +211,30 @@ async function networkFirstVersion(request) {
   }
 }
 
+/** JS and CSS ship beside the shell, so they update with the network and fall back offline. */
+async function networkFirstAsset(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const storeUrl = new URL(request.url);
+  storeUrl.search = "";
+  const storeKey = storeUrl.href;
+
+  try {
+    const response = await networkFetch(request);
+    if (response && response.ok) {
+      cache.put(storeKey, response.clone()).catch(() => {});
+      return response;
+    }
+    throw new Error("Bad network response");
+  } catch {
+    const cached = await cache.match(storeKey);
+    if (cached) return cached;
+    return new Response("Offline", {
+      status: 504,
+      headers: { "Content-Type": "text/plain" },
+    });
+  }
+}
+
 async function cacheFirst(request) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(request, { ignoreSearch: true });
@@ -251,6 +293,11 @@ self.addEventListener("fetch", (event) => {
 
   if (isShellDocumentRequest(event.request)) {
     event.respondWith(networkFirstDocument(event.request));
+    return;
+  }
+
+  if (isAppCodeRequest(event.request)) {
+    event.respondWith(networkFirstAsset(event.request));
     return;
   }
 
