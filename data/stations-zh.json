@@ -679,7 +679,7 @@
         "latitude": "22.33066",
         "longitude": "114.26261",
         "operatingHours": "",
-        "fuelId": "66000,66001,66002,66003",
+        "fuelId": "66000,66001,66002",
         "amenitiesId": "66000,66001,66002,66003",
         "vehicleId": "",
         "paymentTypeId": "",
@@ -693,7 +693,7 @@
         "updatedDate": null,
         "siteId": "",
         "distance": 0.0,
-        "filterIds": "fuelid_66000,fuelid_66001,fuelid_66002,fuelid_66003,amenityid_66000,amenityid_66001,amenityid_66002,amenityid_66003",
+        "filterIds": "fuelid_66000,fuelid_66001,fuelid_66002,amenityid_66000,amenityid_66001,amenityid_66002,amenityid_66003",
         "amenitiesName": [
             "\u6cf5\u8f2a\u80ce\u6c23 ",
             "\u63db\u6cb9 / \u6d17\u8eca\u670d\u52d9 ",
@@ -703,8 +703,7 @@
         "fuelsName": [
             "\u9ec3\u91d1\u6c7d\u6cb9 ",
             "\u767d\u91d1\u6c7d\u6cb9 ",
-            "\u67f4\u6cb9 ",
-            "\u6c7d\u8eca\u7528\u77f3\u6cb9\u6c23 "
+            "\u67f4\u6cb9 "
         ],
         "vehicleid": null,
         "paymenttypeList": null,

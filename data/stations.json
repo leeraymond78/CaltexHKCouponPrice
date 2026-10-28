@@ -679,7 +679,7 @@
         "latitude": "22.33066",
         "longitude": "114.26261",
         "operatingHours": "",
-        "fuelId": "6000,6001,6002,6003",
+        "fuelId": "6000,6001,6002",
         "amenitiesId": "6000,6001,6002,6003",
         "vehicleId": "",
         "paymentTypeId": "",
@@ -693,7 +693,7 @@
         "updatedDate": null,
         "siteId": "00323728",
         "distance": 0.0,
-        "filterIds": "fuelid_6000,fuelid_6001,fuelid_6002,fuelid_6003,amenityid_6000,amenityid_6001,amenityid_6002,amenityid_6003",
+        "filterIds": "fuelid_6000,fuelid_6001,fuelid_6002,amenityid_6000,amenityid_6001,amenityid_6002,amenityid_6003",
         "amenitiesName": [
             "Tyre pumping",
             "Lube / Car Wash Service",
@@ -703,8 +703,7 @@
         "fuelsName": [
             "Gold with Techron Gasoline",
             "Platinum with Techron Gasoline",
-            "Diesel with Techron D",
-            "AutoGas"
+            "Diesel with Techron D"
         ],
         "vehicleid": null,
         "paymenttypeList": null,
